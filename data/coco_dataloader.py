@@ -181,7 +181,7 @@ class CocoDataLoader(TransparentDataLoader):
             batch_num_pads.append(num_pads)
         return new_batch_sentences, batch_num_pads
 
-    def get_next_batch(self, verbose=False, get_also_image_idxes=False, get_also_image_path=False, get_also_obj_labels=False):
+    def get_next_batch(self, verbose=False, get_also_image_idxes=False, get_also_image_path=False):
 
         if self.batch_it[self.rank] >= self.num_batches:
             if verbose:
@@ -247,14 +247,6 @@ class CocoDataLoader(TransparentDataLoader):
             else:
                 return batch_x, batch_y, batch_x_num_pads, file_path_batch_x
 
-        if get_also_obj_labels:
-            boxes_labels = self.get_bboxes_labels(img_id_batch)
-
-            if self.dataloader_mode == 'caption_wise':
-                return batch_x, batch_y, batch_x_num_pads, batch_y_num_pads, boxes_labels
-            else:
-                return batch_x, batch_y, batch_x_num_pads, boxes_labels
-
         if get_also_image_idxes:
             if self.dataloader_mode == 'caption_wise':
                 return batch_x, batch_y, batch_x_num_pads, batch_y_num_pads, img_idx_batch
@@ -265,7 +257,6 @@ class CocoDataLoader(TransparentDataLoader):
             return batch_x, batch_y, batch_x_num_pads, batch_y_num_pads
         else:
             return batch_x, batch_y, batch_x_num_pads
-
 
     def get_batch_samples(self, dataset_split, img_idx_batch_list):
         batch_captions_y_as_string = []
@@ -295,20 +286,16 @@ class CocoDataLoader(TransparentDataLoader):
                batch_captions_y_as_string.append(preprocessed_caption)
                img_id_batch.append(self.coco_dataset.karpathy_train_list[img_idx]['img_id'])
 
-
         if self.use_images_instead_of_features:
-            batch_x, \
-            batch_x_num_pads = self.get_PADDED_image_batch_by_idx(img_idx_batch_list)
+            batch_x, batch_x_num_pads = self.get_PADDED_image_batch_by_idx(img_idx_batch_list)
         else:
-            batch_x, \
-            batch_x_num_pads = self.get_PADDED_bboxes_batch_by_id(img_id_batch)
+            batch_x, batch_x_num_pads = self.get_PADDED_bboxes_batch_by_id(img_id_batch)
 
         batch_caption_y_encoded = language_utils. \
             convert_allsentences_word2idx(batch_captions_y_as_string,
                                           self.coco_dataset.caption_word2idx_dict)
-        batch_y, \
-        batch_y_num_pads = self.add_pad_according_to_batch(batch_caption_y_encoded,
-                                                           self.coco_dataset.get_pad_token_idx())
+        batch_y, batch_y_num_pads = self.add_pad_according_to_batch(batch_caption_y_encoded,
+                                                                    self.coco_dataset.get_pad_token_idx())
         batch_y = torch.tensor(batch_y)
 
         return batch_x, batch_y, batch_x_num_pads, batch_y_num_pads

@@ -46,9 +46,8 @@ class CocoDatasetKarpathy:
             print("BBoxes features path provided, images are provided in form of features.")
 
         if images_path is None:
-            print("Warning: images path set to None, the program will run but some method in " + str(__file__) + \
-                  "for debugging purpose will lead to program termination, \n"
-                  "as a portion of the image path will be replaced with an empty string")
+            print("Warning: images path set to None, the program will run but some debug method in " + str(__file__) + \
+                  " will lead to program termination, as a portion of the image path will be replaced with an empty string")
             self.images_path = ""
         else:
             self.images_path = images_path
