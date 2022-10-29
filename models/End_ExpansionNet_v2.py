@@ -85,8 +85,8 @@ class End_ExpansionNet_v2(CaptioningModel):
         max_num_enc = sum(self.num_exp_enc_list)
         pos_x = torch.arange(max_num_enc).unsqueeze(0).expand(enc_input.size(0), max_num_enc).to(self.rank)
         pad_mask = create_pad_mask(mask_size=(enc_input.size(0), max_num_enc, enc_input.size(1)),
-                                   pad_along_row_input=[0] * enc_input.size(0),
-                                   pad_along_column_input=enc_input_num_pads,
+                                   pad_row=[0] * enc_input.size(0),
+                                   pad_column=enc_input_num_pads,
                                    rank=self.rank)
 
         x_list = []
@@ -108,8 +108,8 @@ class End_ExpansionNet_v2(CaptioningModel):
                                 num_pads=dec_input_num_pads,
                                 rank=self.rank)
         pad_mask = create_pad_mask(mask_size=(dec_input.size(0), dec_input.size(1), cross_input.size(1)),
-                                   pad_along_row_input=dec_input_num_pads,
-                                   pad_along_column_input=enc_input_num_pads,
+                                   pad_row=dec_input_num_pads,
+                                   pad_column=enc_input_num_pads,
                                    rank=self.rank)
 
         y = self.out_embedder(dec_input)

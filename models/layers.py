@@ -5,6 +5,7 @@ import math
 import numpy as np
 import torch.nn.functional as F
 
+
 class EmbeddingLayer(nn.Module):
     def __init__(self, vocab_size, d_model, dropout_perc):
         super(EmbeddingLayer, self).__init__()
@@ -14,24 +15,6 @@ class EmbeddingLayer(nn.Module):
 
     def forward(self, x):
         return self.dropout(self.embed(x)) * math.sqrt(float(self.d_model))
-
-
-class PositionalEncoder(nn.Module):
-    def __init__(self, d_model, max_seq_len, rank=0):
-        super().__init__()
-        assert d_model % 2 == 0, "d_model is not even, even number suggested"
-        self.d_model = d_model
-        self.pe = torch.zeros(max_seq_len, d_model).to(rank)
-        for pos in range(max_seq_len):
-            for i in range(0, d_model, 2):
-                self.pe.data[pos, i] = math.sin(pos / (10000.0 ** ((2.0 * i) / d_model)))
-                self.pe.data[pos, i + 1] = math.cos(pos / (10000.0 ** ((2.0 * i) / d_model)))
-        self.pe.data = self.pe.data.unsqueeze(0)
-
-    def forward(self, x):
-        seq_len = x.shape[1]
-        return self.pe.data[0, :seq_len]
-
 
 
 class StaticExpansionBlock(nn.Module):
@@ -272,6 +255,7 @@ class MultiHeadAttention(nn.Module):
 
         out = self.out_linear(attention_applied_concatenated)
         return out
+
 
 class FeedForward(nn.Module):
     def __init__(self, d_model, d_ff, dropout_perc):

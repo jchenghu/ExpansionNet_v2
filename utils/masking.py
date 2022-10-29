@@ -2,13 +2,13 @@
 import torch
 
 
-def create_pad_mask(mask_size, pad_along_row_input, pad_along_column_input, rank):
+def create_pad_mask(mask_size, pad_row, pad_column, rank):
     batch_size, output_seq_len, input_seq_len = mask_size
     mask = torch.ones(size=(batch_size, output_seq_len, input_seq_len), dtype=torch.int8).to(rank)
 
     for batch_idx in range(batch_size):
-        mask[batch_idx, :, (input_seq_len - pad_along_column_input[batch_idx]):] = 0
-        mask[batch_idx, (output_seq_len - pad_along_row_input[batch_idx]):, :] = 0
+        mask[batch_idx, :, (input_seq_len - pad_column[batch_idx]):] = 0
+        mask[batch_idx, (output_seq_len - pad_row[batch_idx]):, :] = 0
     return mask
 
 
