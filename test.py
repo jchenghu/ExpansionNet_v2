@@ -216,12 +216,6 @@ def evaluate_model_on_set(ddp_model,
 def get_ensemble_model(reference_model,
                        checkpoints_paths,
                        rank=0):
-    import re
-    z = sorted(range(len(checkpoints_paths)), key=lambda k: re.search('fase2_(.+?).pth',
-                                                                      checkpoints_paths[k]).group(1))
-    checkpoints_paths = [checkpoints_paths[k] for k in z]
-    print("Actual order: " + str(checkpoints_paths))
-
     model_list = []
     for i in range(len(checkpoints_paths)):
         model = copy.deepcopy(reference_model)
@@ -306,7 +300,7 @@ def test(rank, world_size,
     else:
         print("Ensembling Evaluation")
         list_checkpoints = os.listdir(save_model_path)
-        checkpoints_list = [ save_model_path + elem for elem in list_checkpoints if elem.startswith('fase2_')]
+        checkpoints_list = [save_model_path + elem for elem in list_checkpoints if elem.endswith('.pth')]
         print("Detected checkpoints: " + str(checkpoints_list))
 
         if len(checkpoints_list) == 0:

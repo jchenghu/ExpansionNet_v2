@@ -1,16 +1,8 @@
 ## ExpansionNet v2:  Block Static Expansion in fast end to end training for Image Captioning
 
 Implementation code for [ExpansionNet v2: Block Static Expansion
-in fast end to end training for Image Captioning](https://arxiv.org/abs/2208.06551): <br>
+in fast end to end training for Image Captioning](https://arxiv.org/abs/2208.06551v3). <br>
 
-```
-@article{hu2022expansionnet,
-  title={ExpansionNet v2: Block Static Expansion in fast end to end training for Image Captioning},
-  author={Hu, Jia Cheng and Cavicchioli, Roberto and Capotondi, Alessandro},
-  journal={arXiv preprint arXiv:2208.06551},
-  year={2022}
-}
-```
 
 ## Results
 
@@ -84,6 +76,26 @@ Predictions examples:
 <p align="center">
   <img src="./results_image.png" width="700"/>
 </p>
+
+
+## Demo
+
+In case you want to try one of the four ensemble's model freely on generic images (not included in COCO) you can 
+download the weights [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing) and
+then run `demo.py`:
+```
+python demo.py \
+     	--load_path your_download_folder/rf_model.pth \
+     	--image_paths your_image_path/image_1 your_image_path/image_2 ...
+
+```
+Some examples:
+
+<p align="center">
+  <img src="./demo_results.png" width="550"/>
+</p>
+
+images are available in `demo_material`.
 
 
 ## Training
@@ -243,24 +255,18 @@ python test.py --N_enc 3 --N_dec 3 --model_dim 512 \
 ```
 The option `is_end_to_end` can be toggled according to the model's type.
 
-## Demo
 
-In case you want to try one of the four ensemble's model freely on generic images (not included in COCO) you can 
-download the weights [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing) and
-then execute `demo.py`:
+## Citation
+
+If you find this repository useful, please consider citing (no obligation):
 ```
-python demo.py \
-     	--load_path your_download_folder/rf_model.pth \
-     	--image_paths your_image_path/image_1 your_image_path/image_2 ...
-
+@article{hu2022expansionnet,
+  title={ExpansionNet v2: Block Static Expansion in fast end to end training for Image Captioning},
+  author={Hu, Jia Cheng and Cavicchioli, Roberto and Capotondi, Alessandro},
+  journal={arXiv preprint arXiv:2208.06551},
+  year={2022}
+}
 ```
-Some examples:
-
-<p align="center">
-  <img src="./demo_results.png" width="550"/>
-</p>
-
-images are available in `demo_material`.
 
 ## Acknowledgements
 
@@ -268,4 +274,6 @@ We thank the PyTorch team and the following repositories:
 * https://github.com/microsoft/Swin-Transformer
 * https://github.com/ruotianluo/ImageCaptioning.pytorch
 * https://github.com/tylin/coco-caption
+
+special thanks to the work of [Yiyu Wang et al](https://arxiv.org/abs/2203.15350).
 
