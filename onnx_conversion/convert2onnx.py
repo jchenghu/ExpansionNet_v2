@@ -176,7 +176,7 @@ class End_ExpansionNet_v2_ONNX(nn.Module):
         return loop_pred, loop_logprobs
 
 
-# Export function
+# Conversion function
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Conversion PyTorch to ONNX')
@@ -207,10 +207,8 @@ if __name__ == "__main__":
     preprocess_pil_image = transf_1(pil_image)
     image = torchvision.transforms.ToTensor()(preprocess_pil_image)
     image = transf_2(image)
-    # <- QUESTO MI SERVE PER TESTARE POI SWIN TRANSF, per ora testo solo la parte DOPO..
 
     # Mode Args specification
-    print("Performing forwards ...\n")
     image = image.unsqueeze(0)
 
     drop_args = Namespace(enc=0.0,
@@ -233,9 +231,9 @@ if __name__ == "__main__":
                                      max_seq_len=args.max_seq_len, drop_args=drop_args)
 
     model.to('cpu')
+    print("Loading model...")
     checkpoint = torch.load(args.load_model_path)
     partially_load_state_dict(model, checkpoint['model_state_dict'])
-    print("Model loaded")
 
     # Pre-Processing
     transf_1 = torchvision.transforms.Compose([torchvision.transforms.Resize((img_size, img_size))])
@@ -249,14 +247,10 @@ if __name__ == "__main__":
     image = torchvision.transforms.ToTensor()(preprocess_pil_image)
     image = transf_2(image)
 
-    # Mode Args specification
-    print("Performing forwards ...\n")
+    print("Performing forwards...")
     image = image.unsqueeze(0)
-    # Exporting
     model.eval()
-
     my_script = torch.jit.script(model)
-
     torch.onnx.export(
         my_script,
         (image, torch.tensor([0]),
@@ -270,13 +264,21 @@ if __name__ == "__main__":
         output_names=['pred', 'logprobs'],
         export_params=True,  # questo serve per passare anche i parametri
         opset_version=14)
-    print("Performed export")
+    print("ONNX graph conversion done.")
 
-    print("Writed ONNX.")
-
-    print("Checking ONNX.")
     onnx_model = onnx.load(args.output_onnx_path)
     onnx.checker.check_model(onnx_model)
+    print("ONNX graph checked.")
 
-    print("Closing.")
-
+    print("Testing")
+    # TO-FIX
+    import onnxruntime as ort
+    onnx_model = onnx.load(args.output_onnx_path)
+    ort_sess = ort.InferenceSession(args.output_onnx_path)
+    input_dict = {'enc_x': image.numpy(),
+                  'enc_x_num_pads': torch.tensor([0]).numpy(),
+                  'sos_idx': coco_tokens['word2idx_dict'][coco_tokens['sos_str']],
+                  'eos_idx': coco_tokens['word2idx_dict'][coco_tokens['eos_str']],
+                  'beam_size': 5,
+                  'max_seq_len': 20}
+    outputs_ort = ort_sess.run(None, input_dict)
