@@ -49,7 +49,7 @@ class StaticExpansionBlock(nn.Module):
         bias_exp = self.bias_exp_vectors(n_indexes)
         x_key = self.key_embed(x)
 
-        z = torch.matmul(query_exp, x_key.transpose(-1, -2)) / np.sqrt(self.d_model)
+        z = torch.matmul(query_exp, x_key.transpose(-1, -2)) / torch.sqrt(self.d_model)
         z = self.Z_dropout(z)
 
         class_a_fw = F.relu(z)
@@ -145,7 +145,7 @@ class DynamicExpansionBlock(nn.Module):
         bias_exp = (bias_exp + cond).view(bs, dec_len * self.num_exp, self.d_model)
 
         x_key = self.key_linear(x)
-        z = torch.matmul(query_exp, x_key.transpose(-1, -2)) / np.sqrt(self.d_model)
+        z = torch.matmul(query_exp, x_key.transpose(-1, -2)) / torch.sqrt(self.d_model)
         z = self.Z_dropout(z)
 
         mod_mask_1 = mask.unsqueeze(2).expand(bs, dec_len, self.num_exp, dec_len).contiguous(). \

@@ -1,4 +1,3 @@
-
 import torch
 
 
@@ -19,4 +18,4 @@ def create_no_peak_and_pad_mask(mask_size, num_pads, rank):
     for batch_idx in range(batch_size):
         mask[batch_idx, :, seq_len - num_pads[batch_idx]:] = 0
         mask[batch_idx, (seq_len - num_pads[batch_idx]):, :] = 0
-    return mask
+    return
