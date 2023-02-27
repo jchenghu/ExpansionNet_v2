@@ -102,20 +102,38 @@ def window_partition(x: torch.Tensor,  window_size: int):
     return windows
 
 
-def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int):
-    """
-    Args:
-        windows: (num_windows*B, window_size, window_size, C)
-        window_size (int): Window size
-        H (int): Height of image
-        W (int): Width of image
+#def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int):
+#    """
+#    Args:
+##        windows: (num_windows*B, window_size, window_size, C)
+#        window_size (int): Window size
+#        H (int): Height of image
+#        W (int): Width of image
+#
+#    Returns:
+#        x: (B, H, W, C)
+#    """
+#    B = int(windows.shape[0] / (H * W / window_size / window_size))
+#    x = windows.view(B, H // window_size, W // window_size, window_size, window_size, -1)
+#    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
+#    return x
 
-    Returns:
-        x: (B, H, W, C)
-    """
+
+def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int):
+    C = windows.shape[-1]
     B = int(windows.shape[0] / (H * W / window_size / window_size))
-    x = windows.view(B, H // window_size, W // window_size, window_size, window_size, -1)
-    x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
+    x = windows.view(B * H // window_size * W // window_size,
+                     window_size * window_size, -1)  # TEST STUPIDISSIMO qui non separo
+    x = x.view(B, H // window_size, W // window_size,  # qui separo. Unica cosa che cambia.
+               window_size * window_size, -1)
+    x = x.view(B, (H // window_size) * (W // window_size),
+               window_size * window_size, -1)
+    x = x.view(B * (H // window_size) * (W // window_size), window_size, window_size * C)
+    x = x.transpose(0, 1).contiguous()  # [window_size, B * (H // window_size) * (W // window_size), window_size * C]
+    x = x.reshape(window_size, B * (H // window_size), W * C)
+    x = x.transpose(0, 1).contiguous()  # (B * H // window_size, window_size, W * C)
+    x = x.reshape(B, H, W * C)
+    x = x.reshape(B, H, W, C)
     return x
 
 
@@ -297,21 +315,43 @@ class SwinTransformerBlock(nn.Module):
         # nW*B, window_size*window_size, C
 
         # merge windows
-        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
-        shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
+        # attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
+        # shifted_x = window_reverse(attn_windows, self.window_size, H, W)  # B H' W' C
+
+        # custom window_reverse designed for ONNX - - - -
+        x = attn_windows.view(-1, self.window_size, self.window_size, C)
+        x = x.view(-1, self.window_size * self.window_size, C)
+        W_div_ = int(W / self.window_size)
+        x = x.view(-1, W_div_, self.window_size * self.window_size, C)
+        x = x.view(-1, self.window_size, self.window_size * C)
+        x = x.transpose(0, 1).contiguous()  # [window_size, B*(H // window_size)*(W // window_size), window_size * C]
+        x = x.reshape(self.window_size, -1, W * C)
+        x = x.transpose(0, 1).contiguous()  # (B * H // window_size, window_size, W * C)
+        x = x.reshape(-1, H, W * C)
+        x = x.reshape(-1, H, W, C)
+        shifted_x = x
+        # - - - - - - - - - - - - - - - - - - -
 
         # reverse cyclic shift
         if self.shift_size > 0:
             x = torch.roll(shifted_x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
         else:
             x = shifted_x
-        x = x.view(B, H * W, C)
+        # x = x.view(B, H * W, C) removed for ONNX
+        x = x.view(-1, H * W, C)
 
         # FFN
         x = shortcut + self.drop_path(x)
         x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         return x
+
+
+
+def sla(x, step):
+    diff = x % step
+    x += (diff > 0)*(step - diff) # add length to be able to reshape properly
+    return torch.arange(x).reshape((-1, step))[:, 0]
 
 
 class PatchMerging(nn.Module):

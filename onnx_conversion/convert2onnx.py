@@ -3,12 +3,15 @@
 """
 
 import os
+import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
 import argparse
 import pickle
 import onnx
+import onnxruntime as ort
+import onnx_tensorrt.backend as backend
 from argparse import Namespace
 
 from PIL import Image as PIL_Image
@@ -36,7 +39,7 @@ def create_pad_mask(mask_size, pad_row, pad_column):
 def create_no_peak_and_pad_mask(mask_size, num_pads):
     block_mask = create_pad_mask(mask_size, num_pads, num_pads)
     bs, seq_len, seq_len = mask_size.shape
-    triang_mask = torch.tril(torch.ones(size=(seq_len, seq_len), dtype=torch.int32),
+    triang_mask = torch.tril(torch.ones(size=(seq_len, seq_len), dtype=torch.float),
                              diagonal=0).unsqueeze(0).repeat(bs, 1, 1)
     return torch.mul(block_mask, triang_mask)
 
@@ -159,15 +162,13 @@ class End_ExpansionNet_v2_ONNX(nn.Module):
     def forward(self, enc_x: torch.Tensor,
                 enc_x_num_pads: torch.Tensor,
                 sos_idx: int, eos_idx: int,
-                beam_size: int, max_seq_len: int):
-
+                max_seq_len: int):
         bs = enc_x.size(0)
         x = self.forward_enc(enc_input=enc_x, enc_input_num_pads=enc_x_num_pads)
-
         loop_pred = torch.ones((bs, 1)).type(torch.long) * sos_idx
         loop_logprobs = torch.zeros((bs, 1))
         for time_step in range(max_seq_len):
-            log_probs = self.forward_dec(x, enc_x_num_pads, loop_pred, torch.tensor([0]))
+            log_probs = self.forward_dec(x, enc_x_num_pads, loop_pred[:, :time_step+1], torch.tensor([0]))
             topv, topi = log_probs[:, time_step, :].topk(k=1)
             loop_pred = torch.cat([loop_pred, topi], dim=-1)
             loop_logprobs = torch.cat([loop_logprobs, topv], dim=-1)
@@ -249,6 +250,7 @@ if __name__ == "__main__":
 
     print("Performing forwards...")
     image = image.unsqueeze(0)
+    """
     model.eval()
     my_script = torch.jit.script(model)
     torch.onnx.export(
@@ -256,29 +258,41 @@ if __name__ == "__main__":
         (image, torch.tensor([0]),
          coco_tokens['word2idx_dict'][coco_tokens['sos_str']],
          coco_tokens['word2idx_dict'][coco_tokens['eos_str']],
-         args.beam_size, args.max_seq_len),
+         args.max_seq_len),
         args.output_onnx_path,
         input_names=['enc_x', 'enc_x_num_pads',
-                     'sos_idx', 'eos_idx'
-                     'beam_size', 'max_seq_len'],
+                     'sos_idx', 'eos_idx',
+                     'max_seq_len'],
         output_names=['pred', 'logprobs'],
         export_params=True,  # questo serve per passare anche i parametri
         opset_version=14)
-    print("ONNX graph conversion done.")
-
+    print("ONNX graph conversion done. ONNX graph destination: " + args.output_onnx_path)
+    """
     onnx_model = onnx.load(args.output_onnx_path)
     onnx.checker.check_model(onnx_model)
     print("ONNX graph checked.")
 
-    print("Testing")
-    # TO-FIX
-    import onnxruntime as ort
+    print("Testing on ONNX runtime")
     onnx_model = onnx.load(args.output_onnx_path)
+
+    # generate optimized graph
     ort_sess = ort.InferenceSession(args.output_onnx_path)
     input_dict = {'enc_x': image.numpy(),
-                  'enc_x_num_pads': torch.tensor([0]).numpy(),
-                  'sos_idx': coco_tokens['word2idx_dict'][coco_tokens['sos_str']],
-                  'eos_idx': coco_tokens['word2idx_dict'][coco_tokens['eos_str']],
-                  'beam_size': 5,
-                  'max_seq_len': 20}
+                  'enc_x_num_pads': np.array([0]),
+                  'sos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['sos_str']]]),
+                  'eos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['eos_str']]]),
+                  'max_seq_len': np.array([20])}
     outputs_ort = ort_sess.run(None, input_dict)
+    output_caption = [coco_tokens['idx2word_list'][idx] for idx in outputs_ort[0][0]]
+    print("\n\n\nONNX Runtime result:\n\t\t" + str(' '.join(output_caption)), end="\n\n\n")
+
+    print("Testing on ONNX-TensorRT backend")
+    engine = backend.prepare(onnx_model, device='CUDA:0')
+    input_data = (image, torch.tensor([0]),
+                  torch.tensor([coco_tokens['word2idx_dict'][coco_tokens['sos_str']]]),
+                  torch.tensor([coco_tokens['word2idx_dict'][coco_tokens['eos_str']]]),
+                  torch.tensor([20]))
+    output_data = engine.run(input_data)[0]
+    print(output_data)
+    print(output_data.shape)
+    print("Closing.")
