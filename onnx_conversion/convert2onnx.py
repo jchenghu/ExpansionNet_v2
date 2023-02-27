@@ -186,7 +186,8 @@ if __name__ == "__main__":
     parser.add_argument('--N_dec', type=int, default=3)
     parser.add_argument('--vocab_path', type=str, default='./demo_material/demo_coco_tokens.pickle')
     parser.add_argument('--max_seq_len', type=int, default=74)
-    parser.add_argument('--image_path', type=str, default='./demo_material/tatin.jpg')
+    parser.add_argument('--image_path_1', type=str, default='./demo_material/tatin.jpg')
+    parser.add_argument('--image_path_2', type=str, default='./demo_material/micheal.jpg')
     parser.add_argument('--load_model_path', type=str, default='./github_ignore_material/saves/rf_model.pth')
     parser.add_argument('--output_onnx_path', type=str, default='./rf_model.onnx')
     parser.add_argument('--beam_size', type=int, default=5)
@@ -198,20 +199,24 @@ if __name__ == "__main__":
         coco_tokens = pickle.load(f)
 
     # Pre-Processing
-    transf_1 = torchvision.transforms.Compose([torchvision.transforms.Resize((img_size, img_size))])
-    transf_2 = torchvision.transforms.Compose([torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                std=[0.229, 0.224, 0.225])])
+    def preprocess_image(image_path):
+        transf_1 = torchvision.transforms.Compose([torchvision.transforms.Resize((img_size, img_size))])
+        transf_2 = torchvision.transforms.Compose([torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                                    std=[0.229, 0.224, 0.225])])
 
-    pil_image = PIL_Image.open(args.image_path)
-    if pil_image.mode != 'RGB':
-        pil_image = PIL_Image.new("RGB", pil_image.size)
-    preprocess_pil_image = transf_1(pil_image)
-    image = torchvision.transforms.ToTensor()(preprocess_pil_image)
-    image = transf_2(image)
+        pil_image = PIL_Image.open(image_path)
+        if pil_image.mode != 'RGB':
+            pil_image = PIL_Image.new("RGB", pil_image.size)
+        preprocess_pil_image = transf_1(pil_image)
+        image = torchvision.transforms.ToTensor()(preprocess_pil_image)
+        image = transf_2(image)
+        return image.unsqueeze(0)
+
+    # we test the generalization of the graph by testing on two images
+    image_1 = preprocess_image(args.image_path_1)
+    image_2 = preprocess_image(args.image_path_2)
 
     # Mode Args specification
-    image = image.unsqueeze(0)
-
     drop_args = Namespace(enc=0.0,
                           dec=0.0,
                           enc_input=0.0,
@@ -236,26 +241,12 @@ if __name__ == "__main__":
     checkpoint = torch.load(args.load_model_path)
     partially_load_state_dict(model, checkpoint['model_state_dict'])
 
-    # Pre-Processing
-    transf_1 = torchvision.transforms.Compose([torchvision.transforms.Resize((img_size, img_size))])
-    transf_2 = torchvision.transforms.Compose([torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                std=[0.229, 0.224, 0.225])])
-
-    pil_image = PIL_Image.open(args.image_path)
-    if pil_image.mode != 'RGB':
-        pil_image = PIL_Image.new("RGB", pil_image.size)
-    preprocess_pil_image = transf_1(pil_image)
-    image = torchvision.transforms.ToTensor()(preprocess_pil_image)
-    image = transf_2(image)
-
     print("Performing forwards...")
-    image = image.unsqueeze(0)
-    """
     model.eval()
     my_script = torch.jit.script(model)
     torch.onnx.export(
         my_script,
-        (image, torch.tensor([0]),
+        (image_1, torch.tensor([0]),
          coco_tokens['word2idx_dict'][coco_tokens['sos_str']],
          coco_tokens['word2idx_dict'][coco_tokens['eos_str']],
          args.max_seq_len),
@@ -267,17 +258,28 @@ if __name__ == "__main__":
         export_params=True,  # questo serve per passare anche i parametri
         opset_version=14)
     print("ONNX graph conversion done. ONNX graph destination: " + args.output_onnx_path)
-    """
+
     onnx_model = onnx.load(args.output_onnx_path)
     onnx.checker.check_model(onnx_model)
     print("ONNX graph checked.")
 
-    print("Testing on ONNX runtime")
     onnx_model = onnx.load(args.output_onnx_path)
 
     # generate optimized graph
+    print("Testing firts image on ONNX runtime")
     ort_sess = ort.InferenceSession(args.output_onnx_path)
-    input_dict = {'enc_x': image.numpy(),
+    input_dict = {'enc_x': image_1.numpy(),
+                  'enc_x_num_pads': np.array([0]),
+                  'sos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['sos_str']]]),
+                  'eos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['eos_str']]]),
+                  'max_seq_len': np.array([20])}
+    outputs_ort = ort_sess.run(None, input_dict)
+    output_caption = [coco_tokens['idx2word_list'][idx] for idx in outputs_ort[0][0]]
+    print("\n\n\nONNX Runtime result:\n\t\t" + str(' '.join(output_caption)), end="\n\n\n")
+
+    print("Testing second image on ONNX runtime")
+    ort_sess = ort.InferenceSession(args.output_onnx_path)
+    input_dict = {'enc_x': image_2.numpy(),
                   'enc_x_num_pads': np.array([0]),
                   'sos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['sos_str']]]),
                   'eos_idx': np.array([coco_tokens['word2idx_dict'][coco_tokens['eos_str']]]),
@@ -288,7 +290,7 @@ if __name__ == "__main__":
 
     print("Testing on ONNX-TensorRT backend")
     engine = backend.prepare(onnx_model, device='CUDA:0')
-    input_data = (image, torch.tensor([0]),
+    input_data = (image_1, torch.tensor([0]),
                   torch.tensor([coco_tokens['word2idx_dict'][coco_tokens['sos_str']]]),
                   torch.tensor([coco_tokens['word2idx_dict'][coco_tokens['eos_str']]]),
                   torch.tensor([20]))
