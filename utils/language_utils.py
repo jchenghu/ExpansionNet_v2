@@ -42,6 +42,7 @@ def tokenize(list_sentences):
         res_sentences_list.append(sentence)
     return res_sentences_list
 
+
 def convert_vector_word2idx(sentence, word2idx_dict):
     return [word2idx_dict[word] for word in sentence]
 
@@ -56,3 +57,17 @@ def convert_vector_idx2word(sentence, idx2word_list):
 
 def convert_allsentences_idx2word(sentences, idx2word_list):
     return [convert_vector_idx2word(sentences[i], idx2word_list) for i in range(len(sentences))]
+
+
+def tokens2description(tokens, idx2word_list, sos_idx, eos_idx):
+    desc = []
+    for tok in tokens:
+        if tok == sos_idx:
+            continue
+        if tok == eos_idx:
+            break
+        desc.append(tok)
+    desc = convert_vector_idx2word(desc, idx2word_list)
+    desc[-1] = desc[-1] + '.'
+    pred = ' '.join(desc).capitalize()
+    return pred

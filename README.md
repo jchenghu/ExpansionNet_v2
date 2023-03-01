@@ -83,7 +83,7 @@ Predictions examples:
 In case you want to try one of the four ensemble's model freely on generic images (not included in COCO) you can 
 download the weights [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing) and
 then run `demo.py`:
-```
+``` 
 python demo.py \
      	--load_path your_download_folder/rf_model.pth \
      	--image_paths your_image_path/image_1 your_image_path/image_2 ...

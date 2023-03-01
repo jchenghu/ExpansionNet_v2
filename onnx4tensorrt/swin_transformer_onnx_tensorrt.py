@@ -119,24 +119,6 @@ def window_partition(x: torch.Tensor,  window_size: int):
 #    return x
 
 
-def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int):
-    C = windows.shape[-1]
-    B = int(windows.shape[0] / (H * W / window_size / window_size))
-    x = windows.view(B * H // window_size * W // window_size,
-                     window_size * window_size, -1)  # TEST STUPIDISSIMO qui non separo
-    x = x.view(B, H // window_size, W // window_size,  # qui separo. Unica cosa che cambia.
-               window_size * window_size, -1)
-    x = x.view(B, (H // window_size) * (W // window_size),
-               window_size * window_size, -1)
-    x = x.view(B * (H // window_size) * (W // window_size), window_size, window_size * C)
-    x = x.transpose(0, 1).contiguous()  # [window_size, B * (H // window_size) * (W // window_size), window_size * C]
-    x = x.reshape(window_size, B * (H // window_size), W * C)
-    x = x.transpose(0, 1).contiguous()  # (B * H // window_size, window_size, W * C)
-    x = x.reshape(B, H, W * C)
-    x = x.reshape(B, H, W, C)
-    return x
-
-
 class WindowAttention(nn.Module):
     r""" Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
@@ -376,8 +358,8 @@ class PatchMerging(nn.Module):
         """
         H, W = self.input_resolution
         B, L, C = x.shape
-        x = x.view(B, H, W, C)
 
+        x = x.view(B, H, W, C)
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
         x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
@@ -483,7 +465,7 @@ class PatchEmbed(nn.Module):
         return x
 
 
-class SwinTransformer_ONNX(nn.Module):
+class SwinTransformer_ONNX_TensorRT(nn.Module):
     r""" Swin Transformer
         A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
           https://arxiv.org/pdf/2103.14030
