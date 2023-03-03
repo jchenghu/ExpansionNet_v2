@@ -25,7 +25,7 @@ def convert_time_as_hhmmss(ticks):
 
 def generate_data(path_args):
 
-    coco_dataset = CocoDatasetKarpathy(images_path=path_args.image_path,
+    coco_dataset = CocoDatasetKarpathy(images_path=path_args.images_path,
                                        coco_annotations_path=args.captions_path + "dataset_coco.json",
                                        train2014_bboxes_path=args.captions_path + "train2014_instances.json",
                                        val2014_bboxes_path=args.captions_path + "val2014_instances.json",
@@ -57,7 +57,7 @@ def generate_data(path_args):
             own_state[name].copy_(param)
             print("Found: " + str(name))
 
-    save_model_path = path_args.save_path
+    save_model_path = path_args.save_model_path
     map_location = {'cuda:%d' % DEFAULT_RANK: 'cuda:%d' % DEFAULT_RANK}
     checkpoint = torch.load(save_model_path, map_location=map_location)
     if 'model_state_dict' in checkpoint.keys():
@@ -95,22 +95,22 @@ def generate_data(path_args):
                                                           CocoDatasetKarpathy.TrainSet_ID)
            output = apply_model(model, img_path)
            hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-           if i % 20000 == 0 or i == coco_dataset.train_num_images - 1:
-               print("Train " + str(i) + " / " + str(coco_dataset.train_num_images) + " completed")
+           if (i+1) % 5000 == 0 or (i+1) == coco_dataset.train_num_images:
+               print("Train " + str(i+1) + " / " + str(coco_dataset.train_num_images) + " completed")
 
         for i in range(coco_dataset.test_num_images):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.TestSet_ID)
             output = apply_model(model, img_path)
             hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-            if i % 2500 == 0 or i == coco_dataset.test_num_images - 1:
-                print("Test " + str(i) + " / " + str(coco_dataset.test_num_images) + " completed")
+            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images-1:
+                print("Test " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
         for i in range(coco_dataset.val_num_images):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.ValidationSet_ID)
             output = apply_model(model, img_path)
             hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-            if i % 2500 == 0 or i == coco_dataset.test_num_images - 1:
-                print("Val " + str(i) + " / " + str(coco_dataset.test_num_images) + " completed")
+            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images-1:
+                print("Val " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
     print("[GPU: " + str(DEFAULT_RANK) + " ] Closing...")
 
@@ -118,16 +118,16 @@ def generate_data(path_args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Image Captioning')
-    parser.add_argument('--save_path', type=str, default='./github_ignore_material/saves/')
+    parser.add_argument('--save_model_path', type=str, default='./github_ignore_material/saves/')
     parser.add_argument('--output_path', type=str, default='./github_ignore_material/raw_data/precalc_features.hdf5')
-    parser.add_argument('--image_path', type=str, default='/tmp/images/')
+    parser.add_argument('--images_path', type=str, default='/tmp/images/')
     parser.add_argument('--captions_path', type=str, default='./github_ignore_material/raw_data/')
 
     args = parser.parse_args()
 
-    path_args = Namespace(save_path=args.save_path,
+    path_args = Namespace(save_model_path=args.save_model_path,
                           output_path=args.output_path,
-                          image_path=args.image_path,
+                          images_path=args.images_path,
                           captions_path=args.captions_path)
     generate_data(path_args=path_args)
 

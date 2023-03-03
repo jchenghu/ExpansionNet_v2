@@ -52,10 +52,11 @@ class ExpansionNet_v2(CaptioningModel):
         x = self.input_embedder_dropout(self.input_linear(enc_input))
 
         sum_num_enc = sum(self.num_exp_enc_list)
-        pos_x = torch.arange(sum_num_enc).unsqueeze(0).expand(enc_input.size(0), sum_num_enc)
+        pos_x = torch.arange(sum_num_enc).unsqueeze(0).expand(enc_input.size(0), sum_num_enc).to(self.rank)
         pad_mask = create_pad_mask(mask_size=(enc_input.size(0), sum_num_enc, enc_input.size(1)),
                                    pad_row=[0] * enc_input.size(0),
-                                   pad_column=enc_input_num_pads)
+                                   pad_column=enc_input_num_pads,
+                                   rank=self.rank)
 
         x_list = []
         for i in range(self.N_enc):
@@ -70,15 +71,17 @@ class ExpansionNet_v2(CaptioningModel):
 
         no_peak_and_pad_mask = create_no_peak_and_pad_mask(
                                 mask_size=(dec_input.size(0), dec_input.size(1), dec_input.size(1)),
-                                num_pads=torch.tensor(dec_input_num_pads))
+                                num_pads=torch.tensor(dec_input_num_pads),
+                                rank=self.rank)
 
         pad_mask = create_pad_mask(mask_size=(dec_input.size(0), dec_input.size(1), cross_input.size(1)),
                                    pad_row=torch.tensor(dec_input_num_pads),
-                                   pad_column=torch.tensor(enc_input_num_pads))
+                                   pad_column=torch.tensor(enc_input_num_pads),
+                                   rank=self.rank)
 
         y = self.out_embedder(dec_input)
-        pos_x = torch.arange(self.num_exp_dec).unsqueeze(0).expand(dec_input.size(0), self.num_exp_dec)
-        pos_y = torch.arange(dec_input.size(1)).unsqueeze(0).expand(dec_input.size(0), dec_input.size(1))
+        pos_x = torch.arange(self.num_exp_dec).unsqueeze(0).expand(dec_input.size(0), self.num_exp_dec).to(self.rank)
+        pos_y = torch.arange(dec_input.size(1)).unsqueeze(0).expand(dec_input.size(0), dec_input.size(1)).to(self.rank)
         y = y + self.pos_encoder(pos_y)
         y_list = []
         for i in range(self.N_dec):

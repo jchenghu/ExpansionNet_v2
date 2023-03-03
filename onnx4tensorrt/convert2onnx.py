@@ -1,5 +1,5 @@
 """
-    Convert pth model 2 onnx4tensorrt format
+    Convert pth model 2 onnx format
 """
 
 import numpy as np
@@ -9,8 +9,6 @@ import argparse
 import pickle
 import copy
 import onnx
-import onnxruntime as ort
-import onnx_tensorrt.backend as backend
 from argparse import Namespace
 
 from PIL import Image as PIL_Image
@@ -34,6 +32,9 @@ if __name__ == "__main__":
     parser.add_argument('--image_path_2', type=str, default='./demo_material/micheal.jpg')
     parser.add_argument('--load_model_path', type=str, default='./github_ignore_material/saves/rf_model.pth')
     parser.add_argument('--output_onnx_path', type=str, default='./rf_model.onnx')
+    parser.add_argument('--onnx_simplify', type=bool, default=False)
+    parser.add_argument('--onnx_runtime_test', type=bool, default=True)
+    parser.add_argument('--onnx_tensorrt_test', type=bool, default=True)
     parser.add_argument('--max_worker_size', type=int, default=10000)
     parser.add_argument('--onnx_opset', type=int, default=14)
     parser.add_argument('--beam_size', type=int, default=5)
@@ -84,7 +85,6 @@ if __name__ == "__main__":
                 output_idx2word=coco_tokens['idx2word_list'],
                 max_seq_len=args.max_seq_len, drop_args=drop_args)
 
-    model.to('cpu')
     print("Loading model...")
     checkpoint = torch.load(args.load_model_path)
     partially_load_state_dict(model, checkpoint['model_state_dict'])
@@ -104,48 +104,61 @@ if __name__ == "__main__":
         output_names=['pred', 'logprobs'],
         export_params=True,
         opset_version=args.onnx_opset)
-
+    print("ONNX graph conversion done. Destination: " + args.output_onnx_path)
     onnx_model = onnx.load(args.output_onnx_path)
     onnx.checker.check_model(onnx_model)
     print("ONNX graph checked.")
-    print("ONNX graph destination: " + args.output_onnx_path)
-    print("Done", end="\n\n")
 
-    print("===============================================")
-    print("||      Testing on ONNX Runtime testing      ||")
-    print("===============================================")
+    if args.onnx_simplify:
+        from onnxsim import simplify
+        print("===============================================")
+        print("||         Simply ONNX graph backend         ||")
+        print("===============================================")
 
-    ort_sess = ort.InferenceSession(args.output_onnx_path)
-    input_dict_1 = {'enc_x': image_1.numpy(),
-                    'enc_x_num_pads': np.array([0]),
-                    'sos_idx': np.array([sos_idx])}
-    outputs_ort = ort_sess.run(None, input_dict_1)
-    output_caption = tokens2description(outputs_ort[0][0].tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
-    print("ONNX Runtime result on 1st image:\n\t\t" + output_caption)
+        onnx_model = onnx.load(args.output_onnx_path)
+        simplified_onnx_model, check = simplify(onnx_model)
+        assert check, "Simplified ONNX model could not be validated"
+        onnx.save(simplified_onnx_model, args.output_onnx_path)
 
-    input_dict_2 = copy.copy(input_dict_1)
-    input_dict_2['enc_x'] = image_2.numpy()
-    outputs_ort = ort_sess.run(None, input_dict_2)
-    output_caption = tokens2description(outputs_ort[0][0].tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
-    print("ONNX Runtime result on 2nd image:\n\t\t" + output_caption)
-    print("Done.", end="\n\n")
+    if args.onnx_runtime_test:
+        import onnxruntime as ort
+        print("===============================================")
+        print("||      Testing on ONNX Runtime testing      ||")
+        print("===============================================")
 
-    print("===============================================")
-    print("||      Testing on ONNX-TensorRT backend     ||")
-    print("===============================================")
+        ort_sess = ort.InferenceSession(args.output_onnx_path)
+        input_dict_1 = {'enc_x': image_1.numpy(),
+                        'enc_x_num_pads': np.array([0]),
+                        'sos_idx': np.array([sos_idx])}
+        outputs_ort = ort_sess.run(None, input_dict_1)
+        output_caption = tokens2description(outputs_ort[0][0].tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
+        print("ONNX Runtime result on 1st image:\n\t\t" + output_caption)
 
-    engine = backend.prepare(onnx_model, device='CUDA:0', max_worker_size=args.max_worker_size)
+        input_dict_2 = copy.copy(input_dict_1)
+        input_dict_2['enc_x'] = image_2.numpy()
+        outputs_ort = ort_sess.run(None, input_dict_2)
+        output_caption = tokens2description(outputs_ort[0][0].tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
+        print("ONNX Runtime result on 2nd image:\n\t\t" + output_caption)
+        print("Done.", end="\n\n")
 
-    input_data = [image_1.numpy(), np.array([0]), np.array([sos_idx])]
-    output_data = engine.run(input_data)[0][0]
-    output_caption = tokens2description(output_data.tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
-    print("TensorRT result on 1st image:\n\t\t" + output_caption)
+    if args.onnx_tensorrt_test:
+        import onnx_tensorrt.backend as backend
+        print("===============================================")
+        print("||      Testing on ONNX-TensorRT backend     ||")
+        print("===============================================")
 
-    input_data[0] = image_2.numpy()
-    output_data = engine.run(input_data)[0][0]
-    output_caption = tokens2description(output_data.tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
-    print("TensorRT result on 2nd image:\n\t\t" + output_caption)
-    print("Done.", end="\n\n")
+        engine = backend.prepare(onnx_model, device='CUDA:0', max_worker_size=args.max_worker_size)
+
+        input_data = [image_1.numpy(), np.array([0]), np.array([sos_idx])]
+        output_data = engine.run(input_data)[0][0]
+        output_caption = tokens2description(output_data.tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
+        print("TensorRT result on 1st image:\n\t\t" + output_caption)
+
+        input_data[0] = image_2.numpy()
+        output_data = engine.run(input_data)[0][0]
+        output_caption = tokens2description(output_data.tolist(), coco_tokens['idx2word_list'], sos_idx, eos_idx)
+        print("TensorRT result on 2nd image:\n\t\t" + output_caption)
+        print("Done.", end="\n\n")
 
     print("Closing.")
 

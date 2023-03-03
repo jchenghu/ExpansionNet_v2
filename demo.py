@@ -64,7 +64,6 @@ if __name__ == "__main__":
                                 output_idx2word=coco_tokens['idx2word_list'],
                                 max_seq_len=args.max_seq_len, drop_args=model_args.drop_args,
                                 rank='cpu')
-    model.to('cpu')
     checkpoint = torch.load(args.load_path)
     model.load_state_dict(checkpoint['model_state_dict'])
     print("Model loaded ...")

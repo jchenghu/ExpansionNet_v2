@@ -4,6 +4,32 @@ Implementation code for [ExpansionNet v2: Block Static Expansion
 in fast end to end training for Image Captioning](https://arxiv.org/abs/2208.06551v3). <br>
 
 
+## Demo
+
+You can test the model generic images (not included in COCO) downloading
+ the checkpoint [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing)
+and launching the script `demo.py`:
+``` 
+python demo.py \
+     	--load_path your_download_folder/rf_model.pth \
+     	--image_paths your_image_path/image_1 your_image_path/image_2 ...
+
+```
+Some examples:
+
+<p align="center">
+  <img src="./demo_results.png" width="550"/>
+</p>
+
+images are available in `demo_material`.
+
+
+## ONNX & TensorRT
+
+The model supports now ONNX conversion and deployment with TensorRT. 
+The graph can be generated using `onnx4tensorrt/convert2onnx.py`.
+
+
 ## Results
 
 Results in the online evaluation server:
@@ -78,25 +104,6 @@ Predictions examples:
 </p>
 
 
-## Demo
-
-In case you want to try one of the four ensemble's model freely on generic images (not included in COCO) you can 
-download the weights [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing) and
-then run `demo.py`:
-``` 
-python demo.py \
-     	--load_path your_download_folder/rf_model.pth \
-     	--image_paths your_image_path/image_1 your_image_path/image_2 ...
-
-```
-Some examples:
-
-<p align="center">
-  <img src="./demo_results.png" width="550"/>
-</p>
-
-images are available in `demo_material`.
-
 
 ## Training
 
@@ -104,6 +111,7 @@ In this guide we cover all the training steps reported in the paper and
 provide the commands in order to reproduce our work.
 
 #### Requirements
+
 * python >= 3.7
 * numpy
 * Java 1.8.0
@@ -132,8 +140,7 @@ before moving to the next one, make sure to save or make a copy if needed.
 Lastly, in some configurations the batch size may look different compared to the one
 reported in the paper when argument `num_accum` is specified (default is 1). This is only
 a visual subtlety, which means that gradient accumulation is performed in order to satisfy 
-the memory constraints of 40GB RAM of a single GPU. Thus, it may not be the most efficient 
-configuration in case of a different architecture.
+the memory constraints of 40GB RAM of a single GPU.
 
 #### 1. Cross Entropy Training: Features generation
 
@@ -141,9 +148,9 @@ First we generate the features for the first training step:
 ```
 cd ExpansionNet_v2_src
 python data_generator.py \
-    --save_path ./github_ignore_material/raw_data/swin_large_patch4_window12_384_22k.pth \
+    --save_model_path ./github_ignore_material/raw_data/swin_large_patch4_window12_384_22k.pth \
     --output_path ./github_ignore_material/raw_data/features.hdf5 \
-    --image_path ./github_ignore_material/raw_data/MS_COCO_2014/ \
+    --images_path ./github_ignore_material/raw_data/MS_COCO_2014/ \
     --captions_path ./github_ignore_material/raw_data/ &> output_file.txt &
 ```
 Even if it's suggested not to do so, the `output_path` argument can be replaced with the desired destination (this would require
@@ -198,9 +205,9 @@ be overwritten during step 5.
 This step generates the features for the reinforcement step:
 ```
 python data_generator.py \
-    --save_path ./github_ignore_material/saves/phase3_checkpoint \
+    --save_model_path ./github_ignore_material/saves/phase3_checkpoint \
     --output_path ./github_ignore_material/raw_data/features.hdf5 \
-    --image_path ./github_ignore_material/raw_data/MS_COCO_2014/ \
+    --images_path ./github_ignore_material/raw_data/MS_COCO_2014/ \
     --captions_path ./github_ignore_material/raw_data/ &> output_file.txt &
 ```
 
@@ -276,4 +283,6 @@ We thank the PyTorch team and the following repositories:
 * https://github.com/tylin/coco-caption
 
 special thanks to the work of [Yiyu Wang et al](https://arxiv.org/abs/2203.15350).
+
+We also thank the user [@shahizat](https://github.com/shahizat) for the suggestion of ONNX and TensorRT conversions.
 
