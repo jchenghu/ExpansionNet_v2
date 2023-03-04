@@ -75,9 +75,10 @@ class End_ExpansionNet_v2(CaptioningModel):
 
     def forward_enc(self, enc_input, enc_input_num_pads):
 
-        assert (enc_input_num_pads is None or enc_input_num_pads == ([0] * enc_input.size(0))), "End to End case have no padding"
+        assert (enc_input_num_pads is None or enc_input_num_pads == ([0] * enc_input.size(0))), \
+            "End to End case have no padding"
         x = self.swin_transf(enc_input)
-        # --------------- Normale parte di Captioning ---------------------------------
+
         enc_input = self.input_embedder_dropout(self.input_linear(x))
         x = enc_input
         enc_input_num_pads = [0] * enc_input.size(0)
@@ -100,7 +101,8 @@ class End_ExpansionNet_v2(CaptioningModel):
         return x
 
     def forward_dec(self, cross_input, enc_input_num_pads, dec_input, dec_input_num_pads, apply_log_softmax=False):
-        assert (enc_input_num_pads is None or enc_input_num_pads == ([0] * cross_input.size(0))), "enc_input_num_pads should be no None"
+        assert (enc_input_num_pads is None or enc_input_num_pads == ([0] * cross_input.size(0))), \
+            "enc_input_num_pads should be no None"
 
         enc_input_num_pads = [0] * dec_input.size(0)
         no_peak_and_pad_mask = create_no_peak_and_pad_mask(

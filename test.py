@@ -296,7 +296,7 @@ def test(rank, world_size,
         print("Not ensemble")
         map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
         checkpoint = torch.load(save_model_path, map_location=map_location)
-        model.load_state_dict(checkpoint['model_state_dict'])
+        model.load_state_dict(checkpoint['model_state_dict'], strict=is_end_to_end)
     else:
         print("Ensembling Evaluation")
         list_checkpoints = os.listdir(save_model_path)
@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--num_gpus', type=int, default=1)
     parser.add_argument('--ddp_sync_port', type=int, default=12354)
-    parser.add_argument('--save_model_path', type=str, default='./github_ignore_material/saves/')
+    parser.add_argument('--save_path', type=str, default='./github_ignore_material/saves/')
 
     parser.add_argument('--eval_parallel_batch_size', type=int, default=16)
     parser.add_argument('--eval_beam_sizes', type=str2list, default=[3])

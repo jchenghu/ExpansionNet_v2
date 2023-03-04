@@ -44,11 +44,11 @@ def generate_data(path_args):
             norm_layer=torch.nn.LayerNorm, ape=False, patch_norm=True,
             use_checkpoint=False)
 
-    def load_backbone_only_from_save(model, state_dict, prefix=False):
+    def load_backbone_only_from_save(model, state_dict, prefix=None):
         own_state = model.state_dict()
         for name, param in state_dict.items():
-            if prefix:
-                name = name.lstrip('swin_transf.')
+            if prefix is not None and name.startswith(prefix):
+                name = name[len(prefix):]
             if name not in own_state:
                 print("Not found: " + str(name))
                 continue
@@ -62,10 +62,10 @@ def generate_data(path_args):
     checkpoint = torch.load(save_model_path, map_location=map_location)
     if 'model_state_dict' in checkpoint.keys():
         print("Custom save point found")
-        load_backbone_only_from_save(model, checkpoint['model_state_dict'], prefix=True)
+        load_backbone_only_from_save(model, checkpoint['model_state_dict'], prefix='swin_transf.')
     else:
         print("Custom save point not found")
-        load_backbone_only_from_save(model, checkpoint['model'], prefix=False)
+        load_backbone_only_from_save(model, checkpoint['model'], prefix=None)
     print("Loading phase ended")
 
     model = model.to(DEFAULT_RANK)

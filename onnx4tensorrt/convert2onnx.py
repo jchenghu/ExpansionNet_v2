@@ -1,9 +1,8 @@
-"""
-    Convert pth model 2 onnx format
-"""
 
+import os
 import numpy as np
 import torch
+import subprocess
 import torchvision
 import argparse
 import pickle
@@ -32,7 +31,7 @@ if __name__ == "__main__":
     parser.add_argument('--image_path_2', type=str, default='./demo_material/micheal.jpg')
     parser.add_argument('--load_model_path', type=str, default='./github_ignore_material/saves/rf_model.pth')
     parser.add_argument('--output_onnx_path', type=str, default='./rf_model.onnx')
-    parser.add_argument('--onnx_simplify', type=bool, default=False)
+    parser.add_argument('--onnx_simplify', type=bool, default=True)
     parser.add_argument('--onnx_runtime_test', type=bool, default=True)
     parser.add_argument('--onnx_tensorrt_test', type=bool, default=True)
     parser.add_argument('--max_worker_size', type=int, default=10000)
@@ -110,15 +109,19 @@ if __name__ == "__main__":
     print("ONNX graph checked.")
 
     if args.onnx_simplify:
-        from onnxsim import simplify
         print("===============================================")
-        print("||         Simply ONNX graph backend         ||")
+        print("||       ONNX graph simplifcation phase      ||")
         print("===============================================")
 
-        onnx_model = onnx.load(args.output_onnx_path)
-        simplified_onnx_model, check = simplify(onnx_model)
-        assert check, "Simplified ONNX model could not be validated"
-        onnx.save(simplified_onnx_model, args.output_onnx_path)
+        simplified_onnx_path = args.output_onnx_path + "_simplified"
+        popen = subprocess.Popen(["onnxsim " + args.output_onnx_path + " " + simplified_onnx_path],
+                                 env=os.environ, cwd='./', stdout=subprocess.PIPE)
+        popen_out, popen_err = popen.communicate()
+        print("ONNX simplifer output:\n" + str(popen_out))
+        print("ONNX simplifier errors:\n" + str(popen_err))
+        print("Generated simiplified version of ONNX: " + simplified_onnx_path)
+        print("Following tests will be performed on the simplified ONNX: " + simplified_onnx_path)
+        onnx_model = onnx.load(simplified_onnx_path)
 
     if args.onnx_runtime_test:
         import onnxruntime as ort

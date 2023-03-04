@@ -28,6 +28,10 @@ images are available in `demo_material`.
 
 The model supports now ONNX conversion and deployment with TensorRT. 
 The graph can be generated using `onnx4tensorrt/convert2onnx.py`.
+The execution mainly requires the `onnx` package. The `onnx_runtime` and `onnx_tensorrt` packages are
+ required for optional testing
+purposes (see `convert2onnx.py` arguments).
+
 
 
 ## Results

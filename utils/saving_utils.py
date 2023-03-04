@@ -90,9 +90,9 @@ def save_last_checkpoint(model,
     torch.save(checkpoint, save_model_path + new_checkpoint_filename)
 
 
-def partially_load_state_dict(model, state_dict, verbose=False):
+def partially_load_state_dict(model, state_dict, verbose=False, max_num_print=5):
     own_state = model.state_dict()
-    num_print = 5
+    max_num_print = max_num_print
     count_print = 0
     for name, param in state_dict.items():
         if name not in own_state:
@@ -103,7 +103,7 @@ def partially_load_state_dict(model, state_dict, verbose=False):
             param = param.data
         own_state[name].copy_(param)
         if verbose:
-            if count_print < num_print:
+            if count_print < max_num_print:
                 print("Found: " + str(name))
                 count_print += 1
 
