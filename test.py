@@ -397,7 +397,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--num_gpus', type=int, default=1)
     parser.add_argument('--ddp_sync_port', type=int, default=12354)
-    parser.add_argument('--save_path', type=str, default='./github_ignore_material/saves/')
+    parser.add_argument('--save_model_path', type=str, default='./github_ignore_material/saves/')
 
     parser.add_argument('--eval_parallel_batch_size', type=int, default=16)
     parser.add_argument('--eval_beam_sizes', type=str2list, default=[3])
