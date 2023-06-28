@@ -28,11 +28,16 @@ images are available in `demo_material`.
 
 The model supports now ONNX conversion and deployment with TensorRT. 
 The graph can be generated using `onnx4tensorrt/convert2onnx.py`.
-The execution mainly requires the `onnx` package. The `onnx_runtime` and `onnx_tensorrt` packages are
- required for optional testing
-purposes (see `convert2onnx.py` arguments).
+Its execution mainly requires the `onnx` package but the `onnx_runtime` and `onnx_tensorrt` packages are
+optionally used for testing purposes (see `convert2onnx.py` arguments).
 
-
+Assuming Generic conversion commands:
+```
+python onnx4tensorrt/convert2onnx.py --onnx_simplify true --load_model_path <your_path> &> output_onnx.txt &
+python onnx4tensorrt/onnx2tensorrt.py &> output_tensorrt.txt &
+```
+the engine will be found as `model_engine.trt`.
+Currently working only in FP32.
 
 ## Results
 
@@ -112,7 +117,7 @@ Predictions examples:
 ## Training
 
 In this guide we cover all the training steps reported in the paper and
-provide the commands in order to reproduce our work.
+provide the commands to reproduce our work.
 
 #### Requirements
 

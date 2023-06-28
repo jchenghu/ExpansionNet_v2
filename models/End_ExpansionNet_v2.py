@@ -1,10 +1,10 @@
 import torch
+import torch.nn as nn
+
 from models.layers import EmbeddingLayer, DecoderLayer, EncoderLayer
 from utils.masking import create_pad_mask, create_no_peak_and_pad_mask
 from models.captioning_model import CaptioningModel
 from models.swin_transformer_mod import SwinTransformer
-
-import torch.nn as nn
 
 
 class End_ExpansionNet_v2(CaptioningModel):

@@ -102,14 +102,14 @@ def generate_data(path_args):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.TestSet_ID)
             output = apply_model(model, img_path)
             hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images-1:
+            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images:
                 print("Test " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
         for i in range(coco_dataset.val_num_images):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.ValidationSet_ID)
             output = apply_model(model, img_path)
             hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images-1:
+            if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images:
                 print("Val " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
     print("[GPU: " + str(DEFAULT_RANK) + " ] Closing...")

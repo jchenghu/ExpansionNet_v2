@@ -15,7 +15,7 @@ class CocoDatasetKarpathy:
     def __init__(self,
                  images_path,
                  coco_annotations_path,
-                 train2014_bboxes_path,
+                 train2014_bboxes_path,  # deprecated
                  val2014_bboxes_path,
                  precalc_features_hdf5_filepath,
                  preproc_images_hdf5_filepath=None,
@@ -43,25 +43,20 @@ class CocoDatasetKarpathy:
         else:
             self.precalc_features_hdf5_filepath = precalc_features_hdf5_filepath
             print("Features path: " + str(self.precalc_features_hdf5_filepath))
-            print("BBoxes features path provided, images are provided in form of features.")
+            print("Features path provided, images are provided in form of features.")
 
         if images_path is None:
-            print("Warning: images path set to None, the program will run but some debug method in " + str(__file__) + \
-                  " will lead to program termination, as a portion of the image path will be replaced with an empty string")
             self.images_path = ""
         else:
             self.images_path = images_path
 
-        self.karpathy_train_set = dict()
-        self.karpathy_val_set = dict()
-        self.karpathy_test_set = dict()
+        self.karpathy_train_dict = dict()
+        self.karpathy_val_dict = dict()
+        self.karpathy_test_dict = dict()
 
         with open(coco_annotations_path, 'r') as f:
             json_file = json.load(f)['images']
 
-        num_train_captions = 0
-        num_val_captions = 0
-        num_test_captions = 0
         if verbose:
             print("Initializing dataset... ", end=" ")
         for json_item in json_file:
@@ -74,30 +69,24 @@ class CocoDatasetKarpathy:
             new_item['captions'] = new_item_captions
 
             if json_item['split'] == 'train' or json_item['split'] == 'restval':
-                self.karpathy_train_set[json_item['cocoid']] = new_item
-                num_train_captions += len(json_item['sentences'])
+                self.karpathy_train_dict[json_item['cocoid']] = new_item
             elif json_item['split'] == 'test':
-                self.karpathy_test_set[json_item['cocoid']] = new_item
-                num_test_captions += len(json_item['sentences'])
+                self.karpathy_test_dict[json_item['cocoid']] = new_item
             elif json_item['split'] == 'val':
-                self.karpathy_val_set[json_item['cocoid']] = new_item
-                num_val_captions += len(json_item['sentences'])
+                self.karpathy_val_dict[json_item['cocoid']] = new_item
 
-        self.add_bboxes(train2014_bboxes_path)
-        self.add_bboxes(val2014_bboxes_path)
+        #self.add_bboxes(train2014_bboxes_path)
+        #self.add_bboxes(val2014_bboxes_path)
 
-        list_train_set = []
-        list_val_set = []
-        list_test_set = []
-        for key in self.karpathy_train_set.keys():
-            list_train_set.append(self.karpathy_train_set[key])
-        for key in self.karpathy_val_set.keys():
-            list_val_set.append(self.karpathy_val_set[key])
-        for key in self.karpathy_test_set.keys():
-            list_test_set.append(self.karpathy_test_set[key])
-        self.karpathy_train_list = list_train_set
-        self.karpathy_val_list = list_val_set
-        self.karpathy_test_list = list_test_set
+        self.karpathy_train_list = []
+        self.karpathy_val_list = []
+        self.karpathy_test_list = []
+        for key in self.karpathy_train_dict.keys():
+            self.karpathy_train_list.append(self.karpathy_train_dict[key])
+        for key in self.karpathy_val_dict.keys():
+            self.karpathy_val_list.append(self.karpathy_val_dict[key])
+        for key in self.karpathy_test_dict.keys():
+            self.karpathy_test_list.append(self.karpathy_test_dict[key])
 
         self.train_num_images = len(self.karpathy_train_list)
         self.val_num_images = len(self.karpathy_val_list)
@@ -165,17 +154,18 @@ class CocoDatasetKarpathy:
         if verbose:
             print("There are " + str(self.num_caption_vocab) + " vocabs in dict")
 
+    """
     def add_bboxes(self, annotations_path):
         with open(annotations_path, 'r') as f:
             annotation_dicts = json.load(f)['annotations']
         for entry in annotation_dicts:
             img_id = entry['image_id']
-            if img_id in self.karpathy_val_set.keys():
-                dict_reference = self.karpathy_val_set
-            elif img_id in self.karpathy_test_set.keys():
-                dict_reference = self.karpathy_test_set
+            if img_id in self.karpathy_val_dict.keys():
+                dict_reference = self.karpathy_val_dict
+            elif img_id in self.karpathy_test_dict.keys():
+                dict_reference = self.karpathy_test_dict
             else:  # if img_id in train_caption_ids:
-                dict_reference = self.karpathy_train_set
+                dict_reference = self.karpathy_train_dict
             bbox = entry['bbox']
             x, y, weight, height = bbox
             new_format_bbox = (int(x), int(y), int(x + weight), int(y + height))
@@ -183,6 +173,7 @@ class CocoDatasetKarpathy:
                 dict_reference[img_id]['bboxes'] = [new_format_bbox]
             else:
                 dict_reference[img_id]['bboxes'].append(new_format_bbox)
+    """
 
     def get_image_path(self, img_idx, dataset_split):
 

@@ -45,7 +45,7 @@ def compute_evaluation_loss(loss_function,
     sb_size = sub_batch_size
 
     tot_loss = 0
-    num_sub_batch = int(num_samples / sb_size)
+    num_sub_batch = math.ceil(num_samples / sb_size)
     tot_num_tokens = 0
     for sb_it in range(num_sub_batch):
         from_idx = sb_it * sb_size

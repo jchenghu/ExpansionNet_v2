@@ -5,14 +5,14 @@
 """
 
 import torch
-import torchvision
 import argparse
 import pickle
 from argparse import Namespace
 
-from PIL import Image as PIL_Image
 from models.End_ExpansionNet_v2 import End_ExpansionNet_v2
-from utils.language_utils import convert_vector_idx2word
+from utils.image_utils import preprocess_image
+from utils.language_utils import tokens2description
+
 
 if __name__ == "__main__":
 
@@ -45,6 +45,9 @@ if __name__ == "__main__":
 
     with open('./demo_material/demo_coco_tokens.pickle', 'rb') as f:
         coco_tokens = pickle.load(f)
+        sos_idx = coco_tokens['word2idx_dict'][coco_tokens['sos_str']]
+        eos_idx = coco_tokens['word2idx_dict'][coco_tokens['eos_str']]
+
     print("Dictionary loaded ...")
 
     img_size = 384
@@ -68,37 +71,25 @@ if __name__ == "__main__":
     model.load_state_dict(checkpoint['model_state_dict'])
     print("Model loaded ...")
 
-    transf_1 = torchvision.transforms.Compose([torchvision.transforms.Resize((img_size, img_size))])
-    transf_2 = torchvision.transforms.Compose([torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                std=[0.229, 0.224, 0.225])])
-
     input_images = []
     for path in args.image_paths:
-        pil_image = PIL_Image.open(path)
-        if pil_image.mode != 'RGB':
-           pil_image = PIL_Image.new("RGB", pil_image.size)
-        preprocess_pil_image = transf_1(pil_image)
-        tens_image_1 = torchvision.transforms.ToTensor()(preprocess_pil_image)
-        tens_image_2 = transf_2(tens_image_1)
-        input_images.append(tens_image_2)
+        input_images.append(preprocess_image(path, img_size))
 
     print("Generating captions ...\n")
     for i in range(len(input_images)):
         path = args.image_paths[i]
-        image = input_images[i].unsqueeze(0)
+        image = input_images[i]
         beam_search_kwargs = {'beam_size': args.beam_size,
                               'beam_max_seq_len': args.max_seq_len,
                               'sample_or_max': 'max',
                               'how_many_outputs': 1,
-                              'sos_idx': coco_tokens['word2idx_dict'][coco_tokens['sos_str']],
-                              'eos_idx': coco_tokens['word2idx_dict'][coco_tokens['eos_str']]}
+                              'sos_idx': sos_idx,
+                              'eos_idx': eos_idx}
         with torch.no_grad():
             pred, _ = model(enc_x=image,
                             enc_x_num_pads=[0],
                             mode='beam_search', **beam_search_kwargs)
-        pred = convert_vector_idx2word(pred[0][0], coco_tokens['idx2word_list'])[1:-1]
-        pred[-1] = pred[-1] + '.'
-        pred = ' '.join(pred).capitalize()
-        print(path + ') \n\tDescription: ' + pred + '\n')
+        pred = tokens2description(pred[0][0], coco_tokens['idx2word_list'], sos_idx, eos_idx)
+        print(path + ' \n\tDescription: ' + pred + '\n')
 
     print("Closed.")

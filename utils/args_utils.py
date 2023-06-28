@@ -20,6 +20,14 @@ def str2list(v):
         raise argparse.ArgumentTypeError('Input expected in the form [b1,b2,b3,...]')
 
 
+def str2type(v):
+    if v.lower() == 'fp32' or v.lower() == 'fp16':
+        return v.lower()
+    else:
+        raise argparse.ArgumentTypeError('Invalid type, currently supported type: [fp32, fp16]')
+
+
+
 def scheduler_type_choice(v):
     if v == 'annealing' or v == 'custom_warmup_anneal':
         return v

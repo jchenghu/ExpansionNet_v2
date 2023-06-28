@@ -120,7 +120,6 @@ def train(rank,
             optimizer.step()
             optimizer.zero_grad()
 
-
         sched.step()
 
         current_rl = sched.get_last_lr()[0]
