@@ -1,12 +1,12 @@
-## ExpansionNet v2:  Block Static Expansion in fast end to end training for Image Captioning
+## ExpansionNet v2: Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning
 
-Implementation code for [ExpansionNet v2: Block Static Expansion
-in fast end to end training for Image Captioning](https://arxiv.org/abs/2208.06551v3). <br>
-
+Implementation code for "Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning" [[BigData2023]](https://www.computer.org/csdl/proceedings-article/bigdata/2023/10386812/1TUPyooQsnu) 
+[[Arxiv]](https://arxiv.org/abs/2208.06551), previously entitled as "ExpansionNet v2: Block Static Expansion
+in fast end to end training for Image Captioning" [[Arxiv]](https://arxiv.org/abs/2208.06551v3). <br>
 
 ## Demo
 
-You can test the model generic images (not included in COCO) downloading
+You can test the model on generic images (not included in COCO) downloading
  the checkpoint [here](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing)
 and launching the script `demo.py`:
 ``` 
@@ -36,7 +36,6 @@ Assuming Generic conversion commands:
 python onnx4tensorrt/convert2onnx.py --onnx_simplify true --load_model_path <your_path> &> output_onnx.txt &
 python onnx4tensorrt/onnx2tensorrt.py &> output_tensorrt.txt &
 ```
-the engine will be found as `model_engine.trt`.
 Currently working only in FP32.
 
 ## Results
@@ -275,12 +274,34 @@ The option `is_end_to_end` can be toggled according to the model's type.
 ## Citation
 
 If you find this repository useful, please consider citing (no obligation):
+
 ```
-@article{hu2022expansionnet,
-  title={ExpansionNet v2: Block Static Expansion in fast end to end training for Image Captioning},
+@inproceedings{hu2023exploiting,
+  title={Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning},
   author={Hu, Jia Cheng and Cavicchioli, Roberto and Capotondi, Alessandro},
-  journal={arXiv preprint arXiv:2208.06551},
-  year={2022}
+  booktitle={2023 IEEE International Conference on Big Data (BigData)},
+  pages={2173--2182},
+  year={2023},
+  organization={IEEE Computer Society}
+}
+```
+alternatively
+```
+@INPROCEEDINGS {10386812,
+author = {J. Hu and R. Cavicchioli and A. Capotondi},
+booktitle = {2023 IEEE International Conference on Big Data (BigData)},
+title = {Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning},
+year = {2023},
+volume = {},
+issn = {},
+pages = {2173-2182},
+abstract = {We introduce a method called the Expansion mechanism that processes the input unconstrained by the number of elements in the sequence. By doing so, the model can learn more effectively compared to traditional attention-based approaches. To support this claim, we design a novel architecture ExpansionNet v2 that achieved strong results on the MS COCO 2014 Image Captioning challenge and the State of the Art in its respective category, with a score of 143.7 CIDErD in the offline test split, 140.8 CIDErD in the online evaluation server and 72.9 AllCIDEr on the nocaps validation set. Additionally, we introduce an End to End training algorithm up to 2.8 times faster than established alternatives.},
+keywords = {training;training data;big data;data models;servers;testing},
+doi = {10.1109/BigData59044.2023.10386812},
+url = {https://doi.ieeecomputersociety.org/10.1109/BigData59044.2023.10386812},
+publisher = {IEEE Computer Society},
+address = {Los Alamitos, CA, USA},
+month = {dec}
 }
 ```
 

@@ -415,7 +415,6 @@ if __name__ == "__main__":
     parser.add_argument('--scst_max_len', type=int, default=20)
     parser.add_argument('--num_epochs', type=int, default=5)
 
-    parser.add_argument('--image_path', type=str, default=None)
     parser.add_argument('--captions_path', type=str, default='./github_ignore_material/raw_data/')
     parser.add_argument('--partial_load', type=str2bool, default=False)
     parser.add_argument('--backbone_save_path', type=str, default='')
