@@ -1,8 +1,8 @@
 ## ExpansionNet v2: Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning
 
-Implementation code for "Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning" [[BigData2023]](https://www.computer.org/csdl/proceedings-article/bigdata/2023/10386812/1TUPyooQsnu) 
-[[Arxiv]](https://arxiv.org/abs/2208.06551), previously entitled as "ExpansionNet v2: Block Static Expansion
-in fast end to end training for Image Captioning" [[Arxiv]](https://arxiv.org/abs/2208.06551v3). <br>
+Implementation code for "[Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning](https://www.computer.org/csdl/proceedings-article/bigdata/2023/10386812/1TUPyooQsnu)" [ [BigData2023](https://www.computer.org/csdl/proceedings-article/bigdata/2023/10386812/1TUPyooQsnu) ]
+[ [Arxiv](https://arxiv.org/abs/2208.06551) ], previously entitled as "ExpansionNet v2: Block Static Expansion
+in fast end to end training for Image Captioning". <br>
 
 ## Demo
 
