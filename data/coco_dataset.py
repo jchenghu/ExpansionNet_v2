@@ -15,8 +15,6 @@ class CocoDatasetKarpathy:
     def __init__(self,
                  images_path,
                  coco_annotations_path,
-                 train2014_bboxes_path,  # deprecated
-                 val2014_bboxes_path,
                  precalc_features_hdf5_filepath,
                  preproc_images_hdf5_filepath=None,
                  limited_num_train_images=None,
@@ -74,9 +72,6 @@ class CocoDatasetKarpathy:
                 self.karpathy_test_dict[json_item['cocoid']] = new_item
             elif json_item['split'] == 'val':
                 self.karpathy_val_dict[json_item['cocoid']] = new_item
-
-        #self.add_bboxes(train2014_bboxes_path)
-        #self.add_bboxes(val2014_bboxes_path)
 
         self.karpathy_train_list = []
         self.karpathy_val_list = []
@@ -153,27 +148,6 @@ class CocoDatasetKarpathy:
             self.caption_idx2word_list.append(discovered_words[i])
         if verbose:
             print("There are " + str(self.num_caption_vocab) + " vocabs in dict")
-
-    """
-    def add_bboxes(self, annotations_path):
-        with open(annotations_path, 'r') as f:
-            annotation_dicts = json.load(f)['annotations']
-        for entry in annotation_dicts:
-            img_id = entry['image_id']
-            if img_id in self.karpathy_val_dict.keys():
-                dict_reference = self.karpathy_val_dict
-            elif img_id in self.karpathy_test_dict.keys():
-                dict_reference = self.karpathy_test_dict
-            else:  # if img_id in train_caption_ids:
-                dict_reference = self.karpathy_train_dict
-            bbox = entry['bbox']
-            x, y, weight, height = bbox
-            new_format_bbox = (int(x), int(y), int(x + weight), int(y + height))
-            if 'bboxes' not in dict_reference[img_id].keys():
-                dict_reference[img_id]['bboxes'] = [new_format_bbox]
-            else:
-                dict_reference[img_id]['bboxes'].append(new_format_bbox)
-    """
 
     def get_image_path(self, img_idx, dataset_split):
 

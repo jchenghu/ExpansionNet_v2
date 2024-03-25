@@ -1,0 +1,6 @@
+h5py==3.8.0
+numpy==1.21.6
+Pillow==9.0.1
+Pillow==10.2.0
+torch==1.12.1+cu113
+torchvision==0.10.0+cu111

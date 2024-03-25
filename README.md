@@ -126,12 +126,15 @@ provide the commands to reproduce our work.
 * pytorch 1.9.0
 * h5py
 
+Requirements file can be found in `requirements.txt`. In case also TensorRT is needed
+use `requirements_wTensorRT.txt`.
+
 #### Data preparation
 
 MS-COCO 2014 images can be downloaded [here](https://cocodataset.org/#download), 
 the respective captions are uploaded in our online [drive](https://drive.google.com/drive/folders/1bBMH4-Fw1LcQZmSzkMCqpEl0piIP88Y3?usp=sharing)
 and the backbone can be found [here](https://github.com/microsoft/Swin-Transformer). All files, in particular
-the 3 json files and the backbone are suggested to be moved in `github_ignore_materal/raw_data/` since commands provided
+the `dataset_coco.json` file and the backbone are suggested to be moved in `github_ignore_materal/raw_data/` since commands provided
 in the following steps assume these files are placed in that directory.
 
 
@@ -283,25 +286,6 @@ If you find this repository useful, please consider citing (no obligation):
   pages={2173--2182},
   year={2023},
   organization={IEEE Computer Society}
-}
-```
-alternatively
-```
-@INPROCEEDINGS {10386812,
-author = {J. Hu and R. Cavicchioli and A. Capotondi},
-booktitle = {2023 IEEE International Conference on Big Data (BigData)},
-title = {Exploiting Multiple Sequence Lengths in Fast End to End Training for Image Captioning},
-year = {2023},
-volume = {},
-issn = {},
-pages = {2173-2182},
-abstract = {We introduce a method called the Expansion mechanism that processes the input unconstrained by the number of elements in the sequence. By doing so, the model can learn more effectively compared to traditional attention-based approaches. To support this claim, we design a novel architecture ExpansionNet v2 that achieved strong results on the MS COCO 2014 Image Captioning challenge and the State of the Art in its respective category, with a score of 143.7 CIDErD in the offline test split, 140.8 CIDErD in the online evaluation server and 72.9 AllCIDEr on the nocaps validation set. Additionally, we introduce an End to End training algorithm up to 2.8 times faster than established alternatives.},
-keywords = {training;training data;big data;data models;servers;testing},
-doi = {10.1109/BigData59044.2023.10386812},
-url = {https://doi.ieeecomputersociety.org/10.1109/BigData59044.2023.10386812},
-publisher = {IEEE Computer Society},
-address = {Los Alamitos, CA, USA},
-month = {dec}
 }
 ```
 
