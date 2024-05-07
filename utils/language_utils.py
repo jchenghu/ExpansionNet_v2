@@ -1,15 +1,15 @@
 import re
 
 
-def compute_num_pads(list_bboxes):
+def compute_num_pads(list_vis_features):
     max_len = -1
-    for bboxes in list_bboxes:
-        num_bboxes = len(bboxes)
-        if num_bboxes > max_len:
-            max_len = num_bboxes
+    for vis_features in list_vis_features:
+        num_vis_features = len(vis_features)
+        if num_vis_features > max_len:
+            max_len = num_vis_features
     num_pad_vector = []
-    for bboxes in list_bboxes:
-        num_pad_vector.append(max_len - len(bboxes))
+    for vis_features in list_vis_features:
+        num_pad_vector.append(max_len - len(vis_features))
     return num_pad_vector
 
 

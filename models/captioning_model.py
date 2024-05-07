@@ -110,6 +110,11 @@ class CaptioningModel(nn.Module):
 
     def beam_search(self, enc_input, enc_input_num_pads, sos_idx, eos_idx,
                     beam_size=3, how_many_outputs=1, max_seq_len=20, sample_or_max='max',):
+        """
+            TO-DO (Maybe?): The code is not very elegant (can be shorter) and optimized.
+            E.g. caching can be implemented for a slight inference time improvement.
+            However, I think it would become less readable / friendly, so not sure if it is worth it.
+        """
         assert (how_many_outputs <= beam_size), "requested output per sequence must be lower than beam width"
         assert (sample_or_max == 'max' or sample_or_max == 'sample'), "argument must be chosen between \'max\' and \'sample\'"
         bs = enc_input.shape[0]

@@ -21,6 +21,7 @@ if __name__ == "__main__":
     parser.add_argument('--N_enc', type=int, default=3)
     parser.add_argument('--N_dec', type=int, default=3)
     parser.add_argument('--max_seq_len', type=int, default=74)
+    parser.add_argument('--device', type=str, default='cpu')
     parser.add_argument('--load_path', type=str, default='./rf_model.pth')
     parser.add_argument('--image_paths', type=str,
                         default=['./demo_material/tatin.jpg',
@@ -40,7 +41,6 @@ if __name__ == "__main__":
     model_args = Namespace(model_dim=args.model_dim,
                            N_enc=args.N_enc,
                            N_dec=args.N_dec,
-                           dropout=0.0,
                            drop_args=drop_args)
 
     with open('./demo_material/demo_coco_tokens.pickle', 'rb') as f:
@@ -66,8 +66,8 @@ if __name__ == "__main__":
                                 output_word2idx=coco_tokens['word2idx_dict'],
                                 output_idx2word=coco_tokens['idx2word_list'],
                                 max_seq_len=args.max_seq_len, drop_args=model_args.drop_args,
-                                rank='cpu')
-    checkpoint = torch.load(args.load_path)
+                                rank=args.device)
+    checkpoint = torch.load(args.load_path, map_location=torch.device(args.device))
     model.load_state_dict(checkpoint['model_state_dict'])
     print("Model loaded ...")
 

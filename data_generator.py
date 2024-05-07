@@ -27,8 +27,6 @@ def generate_data(path_args):
 
     coco_dataset = CocoDatasetKarpathy(images_path=path_args.images_path,
                                        coco_annotations_path=args.captions_path + "dataset_coco.json",
-                                       train2014_bboxes_path=args.captions_path + "train2014_instances.json",
-                                       val2014_bboxes_path=args.captions_path + "val2014_instances.json",
                                        preproc_images_hdf5_filepath=None,
                                        precalc_features_hdf5_filepath=None,
                                        limited_num_train_images=None,
@@ -77,7 +75,15 @@ def generate_data(path_args):
 
     model.eval()
     with torch.no_grad():
-
+        """
+            TIP: if you don't have 100GB of memory is too much for features allocation,
+            try saving arrays into FP16. It shouldn't change affect much the result.
+            Replace each line into:
+              hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
+            into:
+              hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()), dtype=np.float16)
+            we kept it FP32 for coherence with the experimental setup of the paper.
+        """
         hdf5_file = h5py.File(path_args.output_path, 'w')
 
         def apply_model(model, file_path):
@@ -91,24 +97,33 @@ def generate_data(path_args):
             return output.squeeze(0)
 
         for i in range(coco_dataset.train_num_images):
-           img_path, img_id = coco_dataset.get_image_path(coco_dataset.train_num_images - i - 1,
-                                                          CocoDatasetKarpathy.TrainSet_ID)
-           output = apply_model(model, img_path)
-           hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
-           if (i+1) % 5000 == 0 or (i+1) == coco_dataset.train_num_images:
+            img_path, img_id = coco_dataset.get_image_path(coco_dataset.train_num_images - i - 1,
+                                                           CocoDatasetKarpathy.TrainSet_ID)
+            output = apply_model(model, img_path)
+            if path_args.dtype == 'fp16':
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()), dtype=np.float16)
+            else:
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
+            if (i+1) % 5000 == 0 or (i+1) == coco_dataset.train_num_images:
                print("Train " + str(i+1) + " / " + str(coco_dataset.train_num_images) + " completed")
 
         for i in range(coco_dataset.test_num_images):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.TestSet_ID)
             output = apply_model(model, img_path)
-            hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
+            if path_args.dtype == 'fp16':
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()), dtype=np.float16)
+            else:
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
             if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images:
                 print("Test " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
         for i in range(coco_dataset.val_num_images):
             img_path, img_id = coco_dataset.get_image_path(i, CocoDatasetKarpathy.ValidationSet_ID)
             output = apply_model(model, img_path)
-            hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
+            if path_args.dtype == 'fp16':
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()), dtype=np.float16)
+            else:
+                hdf5_file.create_dataset(str(img_id) + '_features', data=np.array(output.cpu()))
             if (i+1) % 2500 == 0 or (i+1) == coco_dataset.test_num_images:
                 print("Val " + str(i+1) + " / " + str(coco_dataset.test_num_images) + " completed")
 
@@ -122,13 +137,15 @@ if __name__ == "__main__":
     parser.add_argument('--output_path', type=str, default='./github_ignore_material/raw_data/precalc_features.hdf5')
     parser.add_argument('--images_path', type=str, default='/tmp/images/')
     parser.add_argument('--captions_path', type=str, default='./github_ignore_material/raw_data/')
+    parser.add_argument('--dtype', type=str, default='fp32', help='Decide data type of saved features')
 
     args = parser.parse_args()
 
     path_args = Namespace(save_model_path=args.save_model_path,
                           output_path=args.output_path,
                           images_path=args.images_path,
-                          captions_path=args.captions_path)
+                          captions_path=args.captions_path,
+                          dtype=args.dtype)
     generate_data(path_args=path_args)
 
 

@@ -201,7 +201,7 @@ class CocoDataLoader(TransparentDataLoader):
         if self.use_images_instead_of_features:
             batch_x, batch_x_num_pads = self.get_PADDED_image_batch_by_idx(img_idx_batch)
         else:
-            batch_x, batch_x_num_pads = self.get_PADDED_bboxes_batch_by_id(img_id_batch)
+            batch_x, batch_x_num_pads = self.get_PADDED_vis_features_batch_by_id(img_id_batch)
 
         if self.dataloader_mode == 'caption_wise':
             batch_caption_y_as_string = copy.copy(self.caption_y[self.rank][self.batch_it[self.rank]])
@@ -289,7 +289,7 @@ class CocoDataLoader(TransparentDataLoader):
         if self.use_images_instead_of_features:
             batch_x, batch_x_num_pads = self.get_PADDED_image_batch_by_idx(img_idx_batch_list)
         else:
-            batch_x, batch_x_num_pads = self.get_PADDED_bboxes_batch_by_id(img_id_batch)
+            batch_x, batch_x_num_pads = self.get_PADDED_vis_features_batch_by_id(img_id_batch)
 
         batch_caption_y_encoded = language_utils. \
             convert_allsentences_word2idx(batch_captions_y_as_string,
@@ -326,20 +326,20 @@ class CocoDataLoader(TransparentDataLoader):
 
         return torch.cat(list_of_images), None
 
-    def get_PADDED_bboxes_batch_by_id(self, img_id_list, verbose=False):
+    def get_PADDED_vis_features_batch_by_id(self, img_id_list, verbose=False):
 
         torch.cuda.synchronize()
         start_time = time()
 
         verbose = False
 
-        list_of_bboxes_tensor = []
-        list_of_num_bboxes = []
+        list_of_vis_features_tensor = []
+        list_of_num_vis_features = []
         for img_id in img_id_list:
-            bboxes_numpy_tensor = self.hdf5_file['%d_features' % img_id][()]
-            bboxes_tensor = torch.tensor(bboxes_numpy_tensor)
-            list_of_bboxes_tensor.append(bboxes_tensor)
-            list_of_num_bboxes.append(len(bboxes_numpy_tensor))
+            vis_features_numpy_tensor = self.hdf5_file['%d_features' % img_id][()]
+            vis_features_tensor = torch.tensor(vis_features_numpy_tensor)
+            list_of_vis_features_tensor.append(vis_features_tensor)
+            list_of_num_vis_features.append(len(vis_features_numpy_tensor))
 
         if verbose:
             torch.cuda.synchronize()
@@ -347,7 +347,7 @@ class CocoDataLoader(TransparentDataLoader):
             print("Time spent disk I/O: " + str(time_spent_batching) + " s")
             start_time = time()
 
-        output_batch = torch.stack(list_of_bboxes_tensor, dim=0).to(self.rank)
+        output_batch = torch.stack(list_of_vis_features_tensor, dim=0).to(self.rank)
 
         if verbose:
             time_spent_batching = (time() - start_time)
@@ -355,13 +355,13 @@ class CocoDataLoader(TransparentDataLoader):
             start_time = time()
 
         list_of_num_pads = []
-        max_seq_len = max([length for length in list_of_num_bboxes])
-        for i in range(len(list_of_num_bboxes)):
-            list_of_num_pads.append(max_seq_len - list_of_num_bboxes[i])
+        max_seq_len = max([length for length in list_of_num_vis_features])
+        for i in range(len(list_of_num_vis_features)):
+            list_of_num_pads.append(max_seq_len - list_of_num_vis_features[i])
 
         if sum(list_of_num_pads) != 0:
-            padded_batch_of_bboxes_tensor = torch.nn.utils.rnn.pad_sequence(list_of_bboxes_tensor, batch_first=True)
-            output_batch = padded_batch_of_bboxes_tensor
+            padded_batch_of_vis_features_tensor = torch.nn.utils.rnn.pad_sequence(list_of_vis_features_tensor, batch_first=True)
+            output_batch = padded_batch_of_vis_features_tensor
         if verbose:
             time_spent_batching = (time() - start_time)
             print("Time spent batching: " + str(time_spent_batching) + " s")
@@ -400,17 +400,17 @@ class CocoDataLoader(TransparentDataLoader):
 
         return tens_image
 
-    def get_bboxes_by_idx(self, img_idx, dataset_split):
+    def get_vis_features_by_idx(self, img_idx, dataset_split):
         if dataset_split == CocoDatasetKarpathy.TestSet_ID:
             img_id = self.coco_dataset.karpathy_test_list[img_idx]['img_id']
-            bboxes_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
+            vis_features_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
         elif dataset_split == CocoDatasetKarpathy.ValidationSet_ID:
             img_id = self.coco_dataset.karpathy_val_list[img_idx]['img_id']
-            bboxes_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
+            vis_features_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
         else:
             img_id = self.coco_dataset.karpathy_train_list[img_idx]['img_id']
-            bboxes_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
-        return bboxes_tensor
+            vis_features_tensor = torch.tensor(self.hdf5_file['%d_features' % img_id][()])
+        return vis_features_tensor
 
     def get_all_image_captions_by_idx(self, img_idx, dataset_split):
         if dataset_split == CocoDatasetKarpathy.TestSet_ID:
@@ -422,7 +422,7 @@ class CocoDataLoader(TransparentDataLoader):
 
         return caption_list
 
-    def get_bboxes_labels(self, img_id_list):
+    def get_vis_features_labels(self, img_id_list):
         if self.use_images_instead_of_features:
             pass
         else:

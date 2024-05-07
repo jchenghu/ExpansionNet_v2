@@ -1,3 +1,7 @@
+# NOTE: Installing whatever version of torch, torchvision, h5py, Pillow
+# fit your machine should work in most cases. Here is reported one possible
+# working configuration but these specific versions are not mandatory.
+
 h5py==3.8.0
 numpy==1.21.6
 onnx==1.14.0

@@ -379,53 +379,90 @@ def spawn_train_processes(model_args,
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Image Captioning')
-    parser.add_argument('--model_dim', type=int, default=512)
-    parser.add_argument('--N_enc', type=int, default=3)
-    parser.add_argument('--N_dec', type=int, default=3)
-    parser.add_argument('--dropout', type=float, default=0.1)
-    parser.add_argument('--enc_drop', type=float, default=0.1)
-    parser.add_argument('--dec_drop', type=float, default=0.1)
-    parser.add_argument('--enc_input_drop', type=float, default=0.1)
-    parser.add_argument('--dec_input_drop', type=float, default=0.1)
-    parser.add_argument('--drop_other', type=float, default=0.1)
+    parser.add_argument('--model_dim', type=int, default=512,
+                        help='Model dimension.')
+    parser.add_argument('--N_enc', type=int, default=3,
+                        help='Number of encoder layers.')
+    parser.add_argument('--N_dec', type=int, default=3,
+                        help='Number of decoder layers.')
+    parser.add_argument('--enc_drop', type=float, default=0.1,
+                        help='Dropout percentage in the encoder.')
+    parser.add_argument('--dec_drop', type=float, default=0.1,
+                        help='Dropout percentage in the decoder.')
+    parser.add_argument('--enc_input_drop', type=float, default=0.1,
+                        help='Dropout percentage in the visual projection.')
+    parser.add_argument('--dec_input_drop', type=float, default=0.1,
+                        help='Dropout percentage in the text embeddings.')
+    parser.add_argument('--drop_other', type=float, default=0.1,
+                        help='Default argument of dropout for remaining elements.')
 
-    parser.add_argument('--optim_type', type=optim_type_choice, default='adam')
-    parser.add_argument('--sched_type', type=scheduler_type_choice, default='fixed')
+    parser.add_argument('--optim_type', type=optim_type_choice, default='adam',
+                        help='Optimizer type.')
+    parser.add_argument('--sched_type', type=scheduler_type_choice, default='fixed',
+                        help='Scheduler type.')
 
-    parser.add_argument('--lr', type=float, default=2e-4)
-    parser.add_argument('--min_lr', type=float, default=5e-7)
-    parser.add_argument('--warmup_iters', type=int, default=4000)
-    parser.add_argument('--anneal_coeff', type=float, default=0.8)
-    parser.add_argument('--anneal_every_epoch', type=float, default=3.0)
+    parser.add_argument('--lr', type=float, default=2e-4,
+                        help='Initial learning rate.')
+    parser.add_argument('--min_lr', type=float, default=5e-7,
+                        help='Minimum learning rate.')
+    parser.add_argument('--warmup_iters', type=int, default=4000,
+                        help='Number of warm-up steps.')
+    parser.add_argument('--anneal_coeff', type=float, default=0.8,
+                        help='Annealing coefficient.')
+    parser.add_argument('--anneal_every_epoch', type=float, default=3.0,
+                        help='Annealing period in epochs.')
 
-    parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--num_accum', type=int, default=1)
-    parser.add_argument('--num_gpus', type=int, default=1)
-    parser.add_argument('--ddp_sync_port', type=int, default=12354)
-    parser.add_argument('--save_path', type=str, default='./github_ignore_material/saves/')
-    parser.add_argument('--save_every_minutes', type=int, default=25)
-    parser.add_argument('--how_many_checkpoints', type=int, default=1)
-    parser.add_argument('--print_every_iter', type=int, default=1000)
+    parser.add_argument('--batch_size', type=int, default=64,
+                        help='Number of samples in mini-batch.')
+    parser.add_argument('--num_accum', type=int, default=1,
+                        help='Number of gradient accumulation for each training step.')
+    parser.add_argument('--num_gpus', type=int, default=1,
+                        help='Number of GPUs.')
+    parser.add_argument('--ddp_sync_port', type=int, default=12354,
+                        help='Distributed Data Parallel synchronization port.')
+    parser.add_argument('--save_path', type=str, default='./github_ignore_material/saves/',
+                        help='Checkpoint folder.')
+    parser.add_argument('--save_every_minutes', type=int, default=25,
+                        help='Time period, in minutes, between checkpoints.')
+    parser.add_argument('--how_many_checkpoints', type=int, default=1,
+                        help='Maximum number of checkpoints.')
+    parser.add_argument('--print_every_iter', type=int, default=1000,
+                        help='Printing period expressed in number of forward operations.')
 
-    parser.add_argument('--eval_every_iter', type=int, default=999999)
-    parser.add_argument('--eval_parallel_batch_size', type=int, default=16)
-    parser.add_argument('--eval_beam_sizes', type=str2list, default=[3])
+    parser.add_argument('--eval_every_iter', type=int, default=999999,
+                        help='Evaluation period, expressed in number of forward operations. Regardless of this value. Evaluation is performed every epoch')
+    parser.add_argument('--eval_parallel_batch_size', type=int, default=16,
+                        help='Number of samples to be evaluated in parallel.')
+    parser.add_argument('--eval_beam_sizes', type=str2list, default=[3],
+                        help='List of Beam Search Widths.')
 
-    parser.add_argument('--reinforce', type=str2bool, default=False)
-    parser.add_argument('--scst_max_len', type=int, default=20)
-    parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--reinforce', type=str2bool, default=False,
+                        help='A toggle for reinforcement and cross-entropy learning.')
+    parser.add_argument('--scst_max_len', type=int, default=20,
+                        help='Maximum sequence length of captions sampled during reinforcement.')
+    parser.add_argument('--num_epochs', type=int, default=5,
+                        help='Number of training epochs before termination.')
 
-    parser.add_argument('--captions_path', type=str, default='./github_ignore_material/raw_data/')
-    parser.add_argument('--partial_load', type=str2bool, default=False)
-    parser.add_argument('--backbone_save_path', type=str, default='')
-    parser.add_argument('--body_save_path', type=str, default='')
-    parser.add_argument('--is_end_to_end', type=str2bool, default=True)
+    parser.add_argument('--captions_path', type=str, default='./github_ignore_material/raw_data/',
+                        help='Location of groudtruth captions.')
+    parser.add_argument('--partial_load', type=str2bool, default=False,
+                        help='Flag for requesting partial loading of the fusion model from an end-to-end model. Not required in case of end-to-end model.')
+    parser.add_argument('--backbone_save_path', type=str, default='',
+                        help='Path of a checkpoint equipped with backbone.')
+    parser.add_argument('--body_save_path', type=str, default='',
+                        help='Path of the fusion model-only checkpoint.')
+    parser.add_argument('--is_end_to_end', type=str2bool, default=True,
+                        help='Toggle for an end-to-end model or fusion model only.')
 
-    parser.add_argument('--images_path', type=str, default="./github_ignore_material/raw_data/")
-    parser.add_argument('--preproc_images_hdf5_filepath', type=str, default=None)
-    parser.add_argument('--features_path', type=str, default="./github_ignore_material/raw_data/")
+    parser.add_argument('--images_path', type=str, default="./github_ignore_material/raw_data/",
+                        help='Path of the images')
+    parser.add_argument('--preproc_images_hdf5_filepath', type=str, default=None,
+                        help='Path for the hdf5 file containing preprocessed images.')
+    parser.add_argument('--features_path', type=str, default="./github_ignore_material/raw_data/",
+                        help='Path for the hdf5 file containing backbones output features.')
 
-    parser.add_argument('--seed', type=int, default=1234)
+    parser.add_argument('--seed', type=int, default=1234,
+                        help='Training seed.')
 
     args = parser.parse_args()
     args.ddp_sync_port = str(args.ddp_sync_port)
@@ -449,7 +486,6 @@ if __name__ == "__main__":
     model_args = Namespace(model_dim=args.model_dim,
                            N_enc=args.N_enc,
                            N_dec=args.N_dec,
-                           dropout=args.dropout,
                            drop_args=drop_args)
     optim_args = Namespace(lr=args.lr,
                            min_lr=args.min_lr,

@@ -23,24 +23,12 @@ Some examples:
 
 images are available in `demo_material`.
 
-
-## ONNX & TensorRT
-
-The model supports now ONNX conversion and deployment with TensorRT. 
-The graph can be generated using `onnx4tensorrt/convert2onnx.py`.
-Its execution mainly requires the `onnx` package but the `onnx_runtime` and `onnx_tensorrt` packages are
-optionally used for testing purposes (see `convert2onnx.py` arguments).
-
-Assuming Generic conversion commands:
-```
-python onnx4tensorrt/convert2onnx.py --onnx_simplify true --load_model_path <your_path> &> output_onnx.txt &
-python onnx4tensorrt/onnx2tensorrt.py &> output_tensorrt.txt &
-```
-Currently working only in FP32.
-
 ## Results
 
-Results in the online evaluation server:
+[SacreEOS](https://github.com/jchenghu/sacreeos) Signature: `STANDARDwInit+Cider-D[n4,s6.0]+average[nspi5]+1.0.0`. <br>
+Results are artifacts-free.
+
+Online evaluation server results:
  <table>
   <tr>
     <th>Captions</th>
@@ -112,6 +100,20 @@ Predictions examples:
 </p>
 
 
+## ONNX & TensorRT
+
+The model supports now ONNX conversion and deployment with TensorRT. 
+The graph can be generated using `onnx4tensorrt/convert2onnx.py`.
+Its execution mainly requires the `onnx` package but the `onnx_runtime` and `onnx_tensorrt` packages are
+optionally used for testing purposes (see `convert2onnx.py` arguments).
+
+Assuming Generic conversion commands:
+```
+python onnx4tensorrt/convert2onnx.py --onnx_simplify true --load_model_path <your_path> &> output_onnx.txt &
+python onnx4tensorrt/onnx2tensorrt.py &> output_tensorrt.txt &
+```
+Currently working only in FP32.
+
 
 ## Training
 
@@ -123,11 +125,16 @@ provide the commands to reproduce our work.
 * python >= 3.7
 * numpy
 * Java 1.8.0
-* pytorch 1.9.0
+* torch
+* torchvision
 * h5py
 
-Requirements file can be found in `requirements.txt`. In case also TensorRT is needed
-use `requirements_wTensorRT.txt`.
+Installing whatever version of `torch, torchvision, h5py, Pillow` fit your machine should
+work in most cases.
+
+One instance of requirements file can be found in `requirements.txt`, in case also TensorRT is needed
+use `requirements_wTensorRT.txt`. However they represent one working instance, specific versions of each package 
+might not be required. 
 
 #### Data preparation
 
@@ -168,6 +175,10 @@ Even if it's suggested not to do so, the `output_path` argument can be replaced 
 changing the argument `features_path` in the next commands as well). Since it's a pretty big
 file (102GB), once the first training is completed, it will be automatically overwritten by
 the remaining operations in case the default name is unchanged.
+
+<b>TIPS:</b> if 100GB of memory is too much for your disk, add the option `--dtype fp16`
+which saves arrays into FP16 so it requires only 50GB. It shouldn't change affect much the result.
+By default, we keep FP32 for conformity with the experimental setup of the paper.
 
 
 #### 2. Cross-Entropy Training: Partial Training
@@ -269,9 +280,12 @@ weights of one of the ensemble's model can be found [here](https://drive.google.
 ```
 python test.py --N_enc 3 --N_dec 3 --model_dim 512 \
     --num_gpus 1 --eval_beam_sizes [5] --is_end_to_end True \
+    --eval_parallel_batch_size 4 \
+    --images_path ./github_ignore_material/raw_data/<your_coco_img_folder> \
     --save_model_path ./github_ignore_material/saves/phase6_checkpoint
 ```
-The option `is_end_to_end` can be toggled according to the model's type.
+The option `is_end_to_end` can be toggled according to the model's type. <br>
+It might be required to give permissions to the file `./eval/get_stanford_models.sh` (e.g. `chmod a+x -R ./eval/` in Linux).
 
 
 ## Citation

@@ -49,7 +49,7 @@ class ExpansionNet_v2(CaptioningModel):
 
     def forward_enc(self, enc_input, enc_input_num_pads):
 
-        x = self.input_embedder_dropout(self.input_linear(enc_input))
+        x = self.input_embedder_dropout(self.input_linear(enc_input.float()))
 
         sum_num_enc = sum(self.num_exp_enc_list)
         pos_x = torch.arange(sum_num_enc).unsqueeze(0).expand(enc_input.size(0), sum_num_enc).to(self.rank)

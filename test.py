@@ -118,7 +118,7 @@ def evaluate_model(ddp_model,
                 sub_batch_x = torch.cat(sub_batch_x).to(rank)
                 sub_batch_x_num_pads = [0] * sub_batch_x.size(0)
             else:
-                sub_batch_x = [data_loader.get_bboxes_by_idx(i, dataset_split=dataset_split)
+                sub_batch_x = [data_loader.get_vis_features_by_idx(i, dataset_split=dataset_split)
                          for i in list(range(from_idx, to_idx))]
                 sub_batch_x = torch.nn.utils.rnn.pad_sequence(sub_batch_x, batch_first=True).to(rank)
                 sub_batch_x_num_pads = compute_num_pads(sub_batch_x)
@@ -434,8 +434,6 @@ if __name__ == "__main__":
     coco_dataset = CocoDatasetKarpathy(
         images_path=args.images_path,
         coco_annotations_path=args.captions_path + "dataset_coco.json",
-        train2014_bboxes_path=args.captions_path + "train2014_instances.json",
-        val2014_bboxes_path=args.captions_path + "val2014_instances.json",
         preproc_images_hdf5_filepath=args.preproc_images_hdf5_filepath if args.is_end_to_end else None,
         precalc_features_hdf5_filepath=None if args.is_end_to_end else args.features_path,
         limited_num_train_images=None,
