@@ -312,5 +312,9 @@ We thank the PyTorch team and the following repositories:
 
 special thanks to the work of [Yiyu Wang et al](https://arxiv.org/abs/2203.15350).
 
-We also thank the user [@shahizat](https://github.com/shahizat) for the suggestion of ONNX and TensorRT conversions.
+We thank the user [@shahizat](https://github.com/shahizat) for the suggestion of ONNX and TensorRT conversions. <br>
+We also thank the github users from the Issues section which provided valuable feedbacks, suggestions,
+and even found very insidious bugs.
+
+
 
